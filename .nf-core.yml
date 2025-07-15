@@ -1,0 +1,13 @@
+lint: {}
+nf_core_version: 3.1.0
+repository_type: pipeline
+template:
+  author: '@shguturu'
+  description: msk access data analysis nextflow pipeline
+  force: true
+  is_nfcore: true
+  name: accessanalysis
+  org: nf-core
+  outdir: .
+  skip_features: []
+  version: 1.0.0dev
