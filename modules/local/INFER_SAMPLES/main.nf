@@ -14,7 +14,7 @@ process INFER_SAMPLES {
     val impact_sample_regex_pattern
         
 
-    publishDir '${outdir}/intermediary/patient_JSONs', mode: 'copy'
+    publishDir "${params.outdir}/intermediary/patient_JSONs", mode: 'copy'
 
     output:
     path "*.json", emit: all_samples_json
