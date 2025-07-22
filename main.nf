@@ -23,6 +23,7 @@ include { INFER_SAMPLES         } from './modules/local/INFER_SAMPLES/main'
 include { GENOTYPE_VARIANTS_INPUT         } from './modules/local/GENOTYPE_VARIANTS_INPUT/main'
 include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/main'
 include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
+include { FIND_FACETS_FIT         } from './modules/local/FIND_FACETS_FIT/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,6 +94,11 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         params.fasta_index
     )
 
+    FIND_FACETS_FIT(
+        params.facet_path,
+        patient_json
+
+    )
     //ACCESSANALYSIS (
     //    samplesheet
     //)
