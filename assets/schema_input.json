@@ -10,7 +10,7 @@
             "cmo_patient_id": {
                 "type": "string",
                 "pattern": "^$|^C-[A-Z0-9]+$",
-                "errorMessage": "cmo_patient_id must be empty or follow the format 'C-XXXXXX'",
+                "errorMessage": "cmo_patient_id must be empty or follow the format 'C-XXXXXX'"
             },
             "dmp_patient_id": {
                 "type": "string",

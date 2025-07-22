@@ -20,6 +20,9 @@ include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_acce
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { INFER_SAMPLES         } from './modules/local/INFER_SAMPLES/main'
+include { GENOTYPE_VARIANTS_INPUT         } from './modules/local/GENOTYPE_VARIANTS_INPUT/main'
+include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/main'
+include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,11 +51,48 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     patient_json
     //samplesheet // channel: samplesheet read in from --input
 
-    //main:
+    main:
 
     //
     // WORKFLOW: Run pipeline
     //
+
+    GENERATE_MAF(
+        patient_json,
+        params.maf_template,
+        params.dmp_calls_path
+    )
+
+    GENOTYPE_VARIANTS_INPUT(
+        patient_json,
+        params.fasta_ref,
+        params.fasta_index,
+        GENERATE_MAF.out.maf_results,
+
+        // Research templates
+        params.research_duplex_bam,
+        params.research_duplex_bai,
+        params.research_simplex_bam,
+        params.research_simplex_bai,
+
+        // Clinical access templates
+        params.clinical_access_duplex_bam,
+        params.clinical_duplex_bai,
+        params.clinical_simplex_bam,
+        params.clinical_simplex_bai,
+
+        // Impact templates
+        params.impact_standard_bam,
+        params.impact_standard_bai
+    )
+
+    GENOTYPE_VARIANTS(
+        patient_json,
+        GENOTYPE_VARIANTS_INPUT.out.genotyping_input,
+        params.fasta_ref,
+        params.fasta_index
+    )
+
     //ACCESSANALYSIS (
     //    samplesheet
     //)

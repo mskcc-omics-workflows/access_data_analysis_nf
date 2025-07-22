@@ -126,7 +126,7 @@ def find_clinical_samples(dmp_impact_key_path, dmp_access_key_path, dmp_id, comb
     
     # Search the impact key file for matching samples by dmp_id
     clinical_access_samples = search_dmp_key_file(dmp_access_key_path, "clinical_access", access_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
-    clinical_impact_samples = search_dmp_key_file(dmp_impact_key_path, "clincal_impact", impact_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
+    clinical_impact_samples = search_dmp_key_file(dmp_impact_key_path, "clinical_impact", impact_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
 
 def search_dmp_key_file(dmp_key_path, assay_type, regex_pattern, combined_id, dmp_id, exclude_list, sample_dict):
     # Go through each line in the key file and search for the dmp id and sample pattern
@@ -226,7 +226,7 @@ def save_to_json(sample_dict, patient_id):
     """ Save dictionary with patient and sample information to a JSON file """
 
     with open(f'{patient_id}_all_samples.json', "w") as out:
-        json.dump(sample_dict, out, indent=4)
+        json.dump(sample_dict[patient_id], out, indent=4)
 
     print(f'Saved {patient_id}_all_samples.json.')
 
