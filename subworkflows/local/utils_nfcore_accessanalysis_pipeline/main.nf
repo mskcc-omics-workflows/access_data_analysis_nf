@@ -72,6 +72,7 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
+    """
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
         .map {
@@ -91,9 +92,10 @@ workflow PIPELINE_INITIALISATION {
                 return [ meta, fastqs.flatten() ]
         }
         .set { ch_samplesheet }
+    """
 
     emit:
-    samplesheet = ch_samplesheet
+    samplesheet = input
     versions    = ch_versions
 }
 

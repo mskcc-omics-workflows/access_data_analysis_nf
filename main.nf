@@ -19,6 +19,7 @@ include { ACCESSANALYSIS  } from './workflows/accessanalysis'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
+include { INFER_SAMPLES         } from './modules/local/INFER_SAMPLES/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,21 +41,23 @@ params.fasta = getGenomeAttribute('fasta')
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow NFCORE_ACCESSANALYSIS {
+workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
+    //take:
     take:
-    samplesheet // channel: samplesheet read in from --input
+    patient_json
+    //samplesheet // channel: samplesheet read in from --input
 
-    main:
+    //main:
 
     //
     // WORKFLOW: Run pipeline
     //
-    ACCESSANALYSIS (
-        samplesheet
-    )
+    //ACCESSANALYSIS (
+    //    samplesheet
+    //)
     emit:
-    multiqc_report = ACCESSANALYSIS.out.multiqc_report // channel: /path/to/multiqc_report.html
+    multiqc_report = null // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,9 +83,20 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    NFCORE_ACCESSANALYSIS (
-        PIPELINE_INITIALISATION.out.samplesheet
+
+    INFER_SAMPLES (
+        PIPELINE_INITIALISATION.out.samplesheet,
+        params.include_samples_file,
+        params.exclude_samples_file,
+        params.dmp_access_key_path,
+        params.dmp_impact_key_path,
+        params.research_access_dir_template,
+        params.access_sample_regex_pattern,
+        params.impact_sample_regex_pattern
     )
+
+    json_files = INFER_SAMPLES.out.all_samples_json.flatten()
+    json_files | MSK_ACCESS_DATA_ANALYSIS_NF
     //
     // SUBWORKFLOW: Run completion tasks
     //
@@ -93,7 +107,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        NFCORE_ACCESSANALYSIS.out.multiqc_report
+        MSK_ACCESS_DATA_ANALYSIS_NF.out.multiqc_report
     )
 }
 
