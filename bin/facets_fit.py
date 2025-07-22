@@ -78,7 +78,7 @@ def generate_facet_maf_path(facet_path, patient_id, sample_id, best_fit):
             else:
                 maf_path = None
 
-        with open(f"{patient_id}_facets_maf_path.txt", "w") as out_file:
+        with open(f"{patient_id}_facets_fit_path.txt", "w") as out_file:
             out_file.write(maf_path + "\n" if maf_path else "MISSING\n")
         return maf_path
 

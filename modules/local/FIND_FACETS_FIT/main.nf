@@ -15,7 +15,7 @@ process FIND_FACETS_FIT {
     publishDir 'output/intermediary/facets_fit', mode: 'copy'
 
     output:
-    path "*facets_maf_path.txt", emit: maf_path
+    path "*facets_fit_path.txt", emit: facet_fit
 
     when:
     task.ext.when == null || task.ext.when

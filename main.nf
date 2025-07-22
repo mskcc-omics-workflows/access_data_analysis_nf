@@ -24,6 +24,7 @@ include { GENOTYPE_VARIANTS_INPUT         } from './modules/local/GENOTYPE_VARIA
 include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/main'
 include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
 include { FIND_FACETS_FIT         } from './modules/local/FIND_FACETS_FIT/main'
+include { FILTER_CALLS         } from './modules/local/FILTER_CALLS/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,6 +100,13 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         patient_json
 
     )
+
+    FILTER_CALLS(
+        patient_json,
+        GENOTYPE_VARIANTS.out.genotyped_mafs,
+        FIND_FACETS_FIT.out.facet_fit
+    )
+
     //ACCESSANALYSIS (
     //    samplesheet
     //)
