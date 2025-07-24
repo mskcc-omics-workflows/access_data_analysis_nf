@@ -67,27 +67,22 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         params.variant_filter_rules.exclude_classifications
     )
 
+
     GENOTYPE_VARIANTS_INPUT(
         patient_json,
-        params.fasta_ref,
-        params.fasta_index,
-        GENERATE_MAF.out.maf_results,
+                GENERATE_MAF.out.maf_results,
 
-        // Research templates
-        params.research_duplex_bam,
-        params.research_duplex_bai,
-        params.research_simplex_bam,
-        params.research_simplex_bai,
+        // Research ACCESS templates
+        params.file_paths.research_access.bam_file.duplex,
+        params.file_paths.research_access.bam_file.simplex,
 
-        // Clinical access templates
-        params.clinical_access_duplex_bam,
-        params.clinical_duplex_bai,
-        params.clinical_simplex_bam,
-        params.clinical_simplex_bai,
+        // Clinical ACCESS templates
+        params.file_paths.clinical_access.bam_file.duplex,
+        params.file_paths.clinical_access.bam_file.simplex,
+        params.file_paths.clinical_access.bam_file.standard,
 
-        // Impact templates
-        params.impact_standard_bam,
-        params.impact_standard_bai
+        // Clinical IMPACT templates
+        params.file_paths.clinical_impact.bam_file.standard
     )
 
     GENOTYPE_VARIANTS(
@@ -144,11 +139,11 @@ workflow {
         PIPELINE_INITIALISATION.out.samplesheet,
         params.include_samples_file,
         params.exclude_samples_file,
-        params.dmp_access_key_path,
-        params.dmp_impact_key_path,
-        params.research_access_dir_template,
-        params.access_sample_regex_pattern,
-        params.impact_sample_regex_pattern
+        params.file_paths.clinical_access.key_file,
+        params.file_paths.clinical_impact.key_file,
+        params.base_dirs.research_access.bam_dir,
+        params.clinical_access_sample_regex_pattern,
+        params.clinical_impact_sample_regex_pattern
     )
 
     json_files = INFER_SAMPLES.out.all_samples_json.flatten()

@@ -7,25 +7,15 @@ process GENOTYPE_VARIANTS_INPUT {
 
     input:
     path patient_json
-    path fasta_ref
-    path fasta_index
-    path maf_output
-
-    // all template paths
-    val research_duplex_bam
-    val research_duplex_bai
-    val research_simplex_bam
-    val research_simplex_bai
-
+    path all_calls_maf
+    val research_access_duplex_bam
+    val research_access_simplex_bam
     val clinical_access_duplex_bam
-    val clinical_duplex_bai
-    val clinical_simplex_bam
-    val clinical_simplex_bai
+    val clinical_access_simplex_bam
+    val clinical_access_standard_bam
+    val clinical_impact_standard_bam
 
-    val impact_standard_bam
-    val impact_standard_bai
-
-    publishDir 'output/intermediary/genotyping_input', mode: 'copy'
+    publishDir "${params.outdir}/intermediary/genotyping_input", mode: 'copy'
 
     output:
     path "*genotyping_input.tsv", emit: genotyping_input
@@ -37,19 +27,14 @@ process GENOTYPE_VARIANTS_INPUT {
     """
     python3 ../../../bin/genotype_variants_input.py \\
         --patient_json $patient_json \\
-        --fasta_ref $fasta_ref \\
-        --maf_results $maf_output \\
-        --threads ${task.cpus} \\
-        --research_duplex_bam $research_duplex_bam \\
-        --research_duplex_bai $research_duplex_bai \\
-        --research_simplex_bam $research_simplex_bam \\
-        --research_simplex_bai $research_simplex_bai \\
+        --all_calls_maf $all_calls_maf \\
+        --research_access_duplex_bam $research_access_duplex_bam \\
+        --research_access_simplex_bam $research_access_simplex_bam \\
         --clinical_access_duplex_bam $clinical_access_duplex_bam \\
-        --clinical_duplex_bai $clinical_duplex_bai \\
-        --clinical_simplex_bam $clinical_simplex_bam \\
-        --clinical_simplex_bai $clinical_simplex_bai \\
-        --impact_standard_bam $impact_standard_bam \\
-        --impact_standard_bai $impact_standard_bai
+        --clinical_access_simplex_bam $clinical_access_simplex_bam \\
+        --clinical_access_standard_bam $clinical_access_standard_bam \\
+        --clinical_impact_standard_bam $clinical_impact_standard_bam \\
+
     """
 
 }
