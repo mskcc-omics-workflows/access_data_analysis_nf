@@ -75,3 +75,36 @@ variant_filter_rules = [
     exclude_classifications : "Silent"
 ]
 ```
+
+## Generating Input Table for Genotype Variants
+The script `genotype_variants_input.py` creates the metadata table used by `genotype_variants`. 
+Each row is a sample to be genotyped, and the columns are simplex, duplex, or standard bam paths associated with the sample.
+The script `infer_bams.py` is a helper script that generates the bam paths given a template file and sample metadata. 
+
+### Assumptions
+
+- The research bam path templates use placeholders: `sample_id` and `cmo_patient_id` 
+- The clincal bam path tempaltes use placeholders: `anon_id`, `anon_id_fl`, and `anon_id_sl` (referring to the first and second letter of the anon id)
+- The base paths of the bams can be changed in the `nextflow.config` file, but the script will expect these placeholders to exist in the paths.
+
+- BAM path templates:
+  - `--research_access_duplex_bam`
+  - `--research_access_simplex_bam`
+  - `--clinical_access_duplex_bam`
+  - `--clinical_access_simplex_bam`
+  - `--clinical_access_standard_bam`
+  - `--clinical_impact_standard_bam`
+
+
+### Output
+
+A TSV file named `<combined_id>_genotyping_input.tsv` with columns:
+- `sample_id`
+- `duplex_bam`, `simplex_bam`, or `standard_bam`
+- `patient_id` (combined patient id)
+- `maf` (full path to input MAF)
+
+### BAM Path Validation
+
+- The BAM path and index file path are validated in `infer_bams.py`.
+- If the BAM file or its `.bai` index are missing, the path is replaced with `"MISSING_PATH"` in the input table and a warning is printed.

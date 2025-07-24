@@ -9,20 +9,27 @@ import logging
 import os
 
 """
-Construct the BAM path by replacing placeholders in the template with values from the sample data.
+Script that constructs BAM paths by replacing placeholders in a given template template with values from the sample data.
+Supports both clinical and research paths.
+Expects "sample_id", "cmo_patient_id", "anon_id", "anon_id_fl" and "anon_id_sl" as the placeholders in the templates. 
 """
 
 def get_bams(sample_data, template):
+    """ Construct a BAM path from a given template and sample-specific metadata."""
 
+    # for research access samples, pull the sample id and cmo patient id from the metadata
     if sample_data['assay_type'] == "research_access":
         sample_id = sample_data['sample_id']
         cmo_patient_id = "-".join(sample_id.split("-")[:2])
+        # the clinical placeholders are set to be empty strings
         anon_id, fl, sl = "", "", ""
     else:
+        # for clinical samples, pull the anon id and the first and second letter of the anon id, set research placeholders to be empty strings
         sample_id, cmo_patient_id = "", ""
         anon_id = sample_data['anon_id']
         fl, sl = anon_id[0], anon_id[1]
 
+    # replace placeholders with the metadata
     bam_path = (
         template
         .replace("{sample_id}", sample_id)
@@ -32,6 +39,7 @@ def get_bams(sample_data, template):
         .replace("{anon_id_sl}", sl)
     )
 
+    # only return the bam path if it is valid
     if validate_bam(bam_path):
         return(str(os.path.realpath(bam_path)))
     else:
@@ -39,15 +47,19 @@ def get_bams(sample_data, template):
 
 
 def validate_bam(bam_path):
-    """Validate existence of BAM file and index file."""
+    """
+    Check if a BAM file and its index file (.bai) exist at the expected location.
+    Returns True if both are present, False otherwise. 
+    """
+
+    # check if the real path of the bam path exists
     if not os.path.isfile(os.path.realpath(bam_path)):
         print(f"[ERROR] BAM file not found: {bam_path}.")
         return False
 
-    # Check for .bai index file
+    # Check for .bam.bai or .bai index file in the same directory
     bai_path_1 = bam_path + ".bai"
     bai_path_2 = bam_path.replace(".bam", ".bai")
-
     if os.path.isfile(bai_path_1) or os.path.isfile(bai_path_2):
         return True
     else:
