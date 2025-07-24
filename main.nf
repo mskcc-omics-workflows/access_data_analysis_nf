@@ -61,8 +61,10 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     GENERATE_MAF(
         patient_json,
-        params.maf_template,
-        params.dmp_calls_path
+        params.file_paths.research_access.variant_file.mutations,
+        params.file_paths.clinical_impact.variant_file.mutations,
+        params.variant_filter_rules.exclude_genes,
+        params.variant_filter_rules.exclude_classifications
     )
 
     GENOTYPE_VARIANTS_INPUT(

@@ -7,10 +7,12 @@ process GENERATE_MAF {
 
     input:
     path patient_json
-    val maf_template
-    path dmp_calls_path
+    val research_access_mutations_maf
+    path dmp_mutations_file
+    val exclude_genes
+    val exclude_classifications
 
-    publishDir 'output/intermediary/MAFs', mode: 'copy'
+    publishDir "${params.outdir}/intermediary/MAFs", mode: 'copy'
 
     output:
         path "*_all_calls.maf", emit: maf_results
@@ -24,8 +26,10 @@ process GENERATE_MAF {
     """
     python3 ../../../bin/generate_maf.py \\
         --patient_json $patient_json \\
-        --maf_template $maf_template \\
-        --dmp_calls_path $dmp_calls_path \\
+        --research_access_mutations_maf $research_access_mutations_maf \\
+        --dmp_mutations_file $dmp_mutations_file \\
+        --exclude_genes $exclude_genes \\
+        --exclude_classifications $exclude_classifications \\
     """
 
 }
