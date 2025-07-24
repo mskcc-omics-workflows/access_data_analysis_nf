@@ -17,7 +17,7 @@ Samples specified in the include and exclude files will be filtered as well.
 Output is one JSON file per patient, containing all samples relevant to the patient under a combined cmo/dmp id.
 """
 
-def get_all_samples(id_mapping_file, research_access_dir_template, dmp_access_key_path, dmp_impact_key_path, include_samples_file, exclude_samples_file, access_sample_regex_pattern, impact_sample_regex_pattern):
+def get_all_samples(id_mapping_file, research_access_bam_dir, clinical_access_key_file, clinical_impact_key_file, include_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern):
     """ Main logic function to get all samples from the id mapping file, split them by patient, get the relevant samples, and save to JSON. """
 
     # Extract the cmo ids, dmp ids, and combined ids from the input file.
@@ -36,12 +36,12 @@ def get_all_samples(id_mapping_file, research_access_dir_template, dmp_access_ke
         if cmo_id: 
             cmo_include_list = get_include_list(include_samples_file, cmo_id)
             cmo_exclude_list = get_exclude_list(exclude_samples_file, cmo_id)
-            find_research_samples(cmo_include_list, cmo_exclude_list, research_access_dir_template, cmo_id, combined_id, sample_dict)
+            find_research_samples(cmo_include_list, cmo_exclude_list, research_access_bam_dir, cmo_id, combined_id, sample_dict)
         
         # If the patient has a dmp id, find any samples that need to be included/excluded, then get all clinical samples
         if dmp_id:
             dmp_exclude_list = get_exclude_list(include_samples_file, dmp_id)
-            find_clinical_samples(dmp_impact_key_path, dmp_access_key_path, dmp_id, combined_id, dmp_exclude_list, sample_dict, access_sample_regex_pattern, impact_sample_regex_pattern)
+            find_clinical_samples(clinical_impact_key_file, clinical_access_key_file, dmp_id, combined_id, dmp_exclude_list, sample_dict, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern)
  
         # Save the final dictionary to json
         save_to_json(sample_dict, combined_id)
@@ -50,16 +50,15 @@ def get_all_samples(id_mapping_file, research_access_dir_template, dmp_access_ke
         print("No samples found in input file.")
 
 
-def find_research_samples(include_list, exclude_list, research_access_dir_template, cmo_id, combined_id, sample_dict):
+def find_research_samples(include_list, exclude_list, research_access_bam_dir, cmo_id, combined_id, sample_dict):
 
-    # Get the path of the access bam directory for the patient
-    research_access_dir = research_access_dir_template.replace("{cmo_patient_id}", cmo_id)
+    # Get the root path of the access bam directory for the patient by removing the sample/current 
+    research_access_bam_dir_root = research_access_bam_dir.split("/{sample_id}")[0].replace("{cmo_patient_id}", cmo_id)
 
-    
     # Use the folders in the directory to get the research sample names
-    research_sample_names = [ sample_name for sample_name in os.listdir(research_access_dir)
+    research_sample_names = [ sample_name for sample_name in os.listdir(research_access_bam_dir_root)
         # Only keep the research samples that have a "current" folder and at least one existing bam file
-        if is_valid_research_sample(sample_name, research_access_dir)]
+        if is_valid_research_sample(sample_name, research_access_bam_dir_root)]
 
     # include and exclude samples based on input lists
     filtered_research_samples = filter_research_samples(research_sample_names, include_list, exclude_list)
@@ -74,11 +73,11 @@ def find_research_samples(include_list, exclude_list, research_access_dir_templa
             "anon_id": "NA"
             }
 
-def is_valid_research_sample(sample_name, research_access_dir):
+def is_valid_research_sample(sample_name, research_access_bam_dir):
     """ Checks if an access research sample has a current directory with at least one bam file """
 
     # Check if current directory exists
-    current_path = os.path.join(research_access_dir, sample_name, "current")
+    current_path = os.path.join(research_access_bam_dir, sample_name, "current")
     if not os.path.isdir(current_path):
         print(f'{sample_name} missing current directory.')
         return False
@@ -122,11 +121,11 @@ def infer_tumor_normal(sample_id):
     
     return sample_type
 
-def find_clinical_samples(dmp_impact_key_path, dmp_access_key_path, dmp_id, combined_id, exclude_list, sample_dict, access_sample_regex_pattern, impact_sample_regex_pattern):
+def find_clinical_samples(clinical_impact_key_file, clinical_access_key_file, dmp_id, combined_id, exclude_list, sample_dict, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern):
     
     # Search the impact key file for matching samples by dmp_id
-    clinical_access_samples = search_dmp_key_file(dmp_access_key_path, "clinical_access", access_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
-    clinical_impact_samples = search_dmp_key_file(dmp_impact_key_path, "clinical_impact", impact_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
+    clinical_access_samples = search_dmp_key_file(clinical_access_key_file, "clinical_access", clinical_access_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
+    clinical_impact_samples = search_dmp_key_file(clinical_impact_key_file, "clinical_impact", clinical_impact_sample_regex_pattern, combined_id, dmp_id, exclude_list, sample_dict)
 
 def search_dmp_key_file(dmp_key_path, assay_type, regex_pattern, combined_id, dmp_id, exclude_list, sample_dict):
     # Go through each line in the key file and search for the dmp id and sample pattern
@@ -235,12 +234,11 @@ if __name__ == "__main__":
     parser.add_argument("--id_mapping_file", required=True)
     parser.add_argument("--include_samples_file", required=False)
     parser.add_argument("--exclude_samples_file", required=False)
-    parser.add_argument("--dmp_access_key_path", required=True)
-    parser.add_argument("--dmp_impact_key_path", required=True)
-    parser.add_argument("--research_access_dir_template", required=True)
-    parser.add_argument("--access_sample_regex_pattern", required=True)
-    parser.add_argument("--impact_sample_regex_pattern", required=True)
+    parser.add_argument("--clinical_access_key_file", required=True)
+    parser.add_argument("--clinical_impact_key_file", required=True)
+    parser.add_argument("--research_access_bam_dir", required=True)
+    parser.add_argument("--clinical_access_sample_regex_pattern", required=True)
+    parser.add_argument("--clinical_impact_sample_regex_pattern", required=True)
     args = parser.parse_args()
 
-    get_all_samples(args.id_mapping_file, args.research_access_dir_template, args.dmp_access_key_path, args.dmp_impact_key_path, args.include_samples_file, args.exclude_samples_file, args.access_sample_regex_pattern, args.impact_sample_regex_pattern)
-    
+    get_all_samples(args.id_mapping_file, args.research_access_bam_dir, args.clinical_access_key_file, args.clinical_impact_key_file, args.include_samples_file, args.exclude_samples_file, args.clinical_access_sample_regex_pattern, args.clinical_impact_sample_regex_pattern)

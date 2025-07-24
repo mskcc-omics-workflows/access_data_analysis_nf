@@ -1,18 +1,15 @@
 process INFER_SAMPLES {
     label 'process_single'
 
-    conda "${moduleDir}/environment.yml"
-
     input:
     path id_mapping_file
     path include_samples_file
     path exclude_samples_file
-    path dmp_access_key_path, name: "access_key.txt"
-    path dmp_impact_key_path, name: "dmp_key.txt"
-    val research_access_dir_template
-    val access_sample_regex_pattern
-    val impact_sample_regex_pattern
-        
+    path clinical_access_key_file, name: "access_key.txt"
+    path clinical_impact_key_file, name: "dmp_key.txt"
+    val research_access_bam_dir
+    val clinical_access_sample_regex_pattern
+    val clinical_impact_sample_regex_pattern        
 
     publishDir "${params.outdir}/intermediary/patient_JSONs", mode: 'copy'
 
@@ -30,11 +27,11 @@ process INFER_SAMPLES {
         --id_mapping_file $id_mapping_file \\
         --include_samples_file $include_samples_file \\
         --exclude_samples_file $exclude_samples_file \\
-        --dmp_access_key_path $dmp_access_key_path \\
-        --dmp_impact_key_path $dmp_impact_key_path \\
-        --research_access_dir_template $research_access_dir_template \\
-        --access_sample_regex_pattern '$access_sample_regex_pattern' \\
-        --impact_sample_regex_pattern '$impact_sample_regex_pattern' \\
+        --clinical_access_key_file $clinical_access_key_file \\
+        --clinical_impact_key_file $clinical_impact_key_file \\
+        --research_access_bam_dir $research_access_bam_dir \\
+        --clinical_access_sample_regex_pattern '$clinical_access_sample_regex_pattern' \\
+        --clinical_impact_sample_regex_pattern '$clinical_impact_sample_regex_pattern' \\
     """
 
 }
