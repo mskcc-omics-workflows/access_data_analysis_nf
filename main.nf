@@ -88,8 +88,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     GENOTYPE_VARIANTS(
         patient_json,
         GENOTYPE_VARIANTS_INPUT.out.genotyping_input,
-        params.fasta_ref,
-        params.fasta_index
+        params.fasta_ref
     )
 
     FIND_FACETS_FIT(

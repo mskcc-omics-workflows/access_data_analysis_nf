@@ -99,9 +99,11 @@ def filter_calls(calls_df, exclude_genes, exclude_classifications):
     exclude_classifications: list of exact variant classifications to exclude
     """
 
+    filtered_calls = calls_df.copy()
+
     # Exclude rows where Hugo_Symbol contains any substring from exclude_genes
     for gene in exclude_genes:
-        filtered_calls = calls_df[~calls_df['Hugo_Symbol'].str.contains(gene, na=False)]
+        filtered_calls = filtered_calls[~filtered_calls['Hugo_Symbol'].str.contains(gene, na=False)]
 
     # Exclude rows where Variant_Classification exactly matches any exclude_classifications
     filtered_calls = filtered_calls[~filtered_calls['Variant_Classification'].isin(exclude_classifications)]
@@ -117,7 +119,7 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf):
     research_mutations = []
 
     if not cmo_id:
-        print(f'Patient {patient_data['combined_id']} does not have a CMO ID. Not checking for clinical calls.')
+        print(f"Patient {patient_data['combined_id']} does not have a CMO ID. Not checking for clinical calls.")
     else:
         # find each research sample in the patient_data
         for sample_id, sample_data in patient_data["samples"].items():
@@ -134,8 +136,8 @@ def get_clinical_mutations(patient_data, dmp_mutations_file):
     dmp_id = patient_data['dmp_id']
     clinical_mutations = []
 
-    if not dmp_id: 
-        print(f'Patient {patient_data['combined_id']} does not have a DMP ID. Not checking for clinical calls.')
+    if not dmp_id:
+        print(f"Patient {patient_data['combined_id']} does not have a DMP ID. Not checking for clinical calls.")
     else:
          clinical_mutations = parse_mutation_file(dmp_mutations_file, "clinical", dmp_id)
 
@@ -156,8 +158,8 @@ def merge_calls(research_calls, clinical_calls):
 def write_to_maf(calls_df, patient_id):
     """ Save call information to a tab delimited file """
 
-    calls_df.to_csv(f"{patient_id}_all_calls.maf", index=False, sep = "\t")
-    print(f'{patient_id}_all_small_calls_filtered.csv has been created.')
+    calls_df.to_csv(f"{patient_id}_all_small_calls.maf", index=False, sep = "\t")
+    print(f'{patient_id}_all_small_calls.maf has been created.')
 
 def load_patient_data(patient_json):
     with open(patient_json) as json_file:

@@ -16,13 +16,17 @@ def build_input_table(patient_json, templates, all_calls_maf):
     combines with patient and MAF metadata, and writes to a TSV output.
     """
 
+    required_cols = ['patient_id', 'sample_id', 'standard_bam', 'duplex_bam', 'simplex_bam', 'maf']
+
     patient_data = load_patient_json(patient_json)
     combined_id = patient_data['combined_id']
     bam_paths = extract_bam_paths(patient_data, templates)
     
     bam_paths_df = pd.DataFrame(bam_paths)
-    bam_paths_df['patient_id'] = combined_id
+    #bam_paths_df['patient_id'] = combined_id
     bam_paths_df['maf'] = os.path.realpath(all_calls_maf)
+
+    bam_paths_df = bam_paths_df.reindex(columns=required_cols, fill_value="NA")
 
     write_genotyping_table(bam_paths_df, combined_id)
 

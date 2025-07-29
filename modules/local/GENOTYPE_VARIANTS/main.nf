@@ -10,11 +10,10 @@ process GENOTYPE_VARIANTS {
 
     input:
     path patient_json
-    path genotyping_input
-    path fasta_ref
-    path fasta_index
-
-    publishDir 'output/intermediary/genotyped_mafs', mode: 'copy'
+    val genotyping_input
+    val fasta_ref
+    
+    publishDir "${params.outdir}/intermediary/genotyped_mafs", mode: 'copy'
 
     output:
     path "*.maf", emit: genotyped_mafs

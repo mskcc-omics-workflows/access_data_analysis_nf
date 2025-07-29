@@ -17,7 +17,6 @@
                 "pattern": "^$|^P-[A-Z0-9]+$",
                 "errorMessage": "dmp_patient_id must be empty or follow the format 'P-XXXXXX'"
             }
-        },
-        "required": ["cmo_patient_id", "dmp_patient_id"]
+        }
     }
 }

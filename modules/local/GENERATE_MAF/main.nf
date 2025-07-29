@@ -15,7 +15,7 @@ process GENERATE_MAF {
     publishDir "${params.outdir}/intermediary/MAFs", mode: 'copy'
 
     output:
-        path "*_all_calls.maf", emit: maf_results
+        path "*_all_small_calls.maf", emit: maf_results
 
 
     when:
