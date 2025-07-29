@@ -1,205 +1,115 @@
 import glob
 from pathlib import Path
 import pandas as pd
-import typer
 import argparse
 import json
 
+def get_facets_files(facets_dir, patient_json, best_fit):
+    patient_data = load_patient_data(patient_json)
+    dmp_id = patient_data["dmp_id"]
+    combined_id = patient_data["combined_id"]
+    facets_files = []
 
-def generate_facet_maf_path(facet_path, patient_id, sample_id, best_fit):
-    """Get path of maf associated with facet-suite output
-
-    Args:
-        facet_path (pathlib.PATH|str): path to search for the facet file
-        patient_id (str): patient id to be used to search, default is set to None
-        sample_id (str): sample id to be used to search, default is set to None
-        best_fit(bool) : if true attempt to get get best fit from facet repo
-
-    Returns:
-        str: path of the facets maf
-    """
-
-    if (not best_fit):
-        if sample_id:
-            maf_path = facet_path.joinpath(
-                patient_id[:7], f"{sample_id}*", "default", "*[0-9].ccf.maf"
-            )
-            maf_path = get_maf_path(maf_path, patient_id, sample_id)
-        elif patient_id:
-            maf_path = facet_path.joinpath(
-                patient_id[:7], f"{patient_id}*", "default", "*[0-9].ccf.maf"
-            )
-            maf_path = get_maf_path(maf_path, patient_id, None)
-        else:
-            maf_path = None
-        return maf_path
+    if best_fit:
+        facets_files = find_best_facet_file(facets_dir, dmp_id)
     else:
-        if sample_id:
-            manifest_path = facet_path.joinpath(
-                patient_id[:7], f"{sample_id}*", "facets_review.manifest"
-            )
-        else:
-            print(patient_id)
-            print(facet_path)
-            manifest_path = facet_path.joinpath(
-                patient_id[:7], f"{patient_id}*", "facets_review.manifest"
-            )
-            print(manifest_path)
-        manifest_path = glob.glob(manifest_path.as_posix())
-        print(manifest_path)
-        if len(manifest_path) == 0:        
-            if sample_id:
-                typer.secho(
-                    f"Could not find the facets-suite `facets_review.manifest` file using sample id. {sample_id}",
-                    err=True,
-                    fg=typer.colors.BRIGHT_RED,
-                )
-                maf_path = get_maf_path(facet_path.joinpath(patient_id[:7], f"{sample_id}*", "default", "*[0-9].ccf.maf"), patient_id, sample_id)
-            else:
-                typer.secho(
-                    f"Could not find the facets-suite `facets_review.manifest` file using patient id. {patient_id}",
-                    err=True,
-                    fg=typer.colors.BRIGHT_RED,
-                )
-                maf_path = get_maf_path(facet_path.joinpath(patient_id[:7], f"{patient_id}*", "default", "*[0-9].ccf.maf"), patient_id, None)
-        elif len(manifest_path) > 1:
-            manifest_path = [Path(i) for i in manifest_path]
-            manifest_path = sorted(manifest_path, key=lambda i: str(i.stem))
-            manifest_path_sorted = [str(i) for i in manifest_path]
-            best_fit_folder = get_best_fit_folder(manifest_path_sorted[0])
-            if best_fit_folder:
-                maf_path = get_maf_path(best_fit_folder, patient_id, None)
-            else:
-                maf_path = None
-        else:
-            best_fit_folder = get_best_fit_folder(manifest_path[0])
-            if best_fit_folder:
-                maf_path = get_maf_path(best_fit_folder, patient_id, None)
-            else:
-                maf_path = None
+        facets_files = find_all_facets_files(facets_dir, dmp_id)
 
-        with open(f"{patient_id}_facets_fit_path.txt", "w") as out_file:
-            out_file.write(maf_path + "\n" if maf_path else "MISSING\n")
-        return maf_path
+    print("facets_files")
+    print(facets_files)
 
-def get_maf_path(maf_path, patient_id, sample_id):
-    """Get the maf file
+    write_to_txt(facets_files, combined_id)
 
-    Args:
-        maf_path (pathlib.Path): Base path of the maf file
-        patient_id (str): DMP Patient ID for facets
-        sample_id (str): DMP Sample ID if any for facets
+def find_all_facets_files(facets_dir, dmp_id):
+    patient_path = Path(facets_dir) / dmp_id[:7]
+    print(patient_path)
+    maf_pattern = str(patient_path / f"{dmp_id}*" / "default" / "*[0-9].ccf.maf")
+    print(maf_pattern)
+    return sorted(glob.glob(maf_pattern))
 
-    Returns:
-        str: Path to the maf file
-    """
-    maf_list = glob.glob(maf_path.as_posix())
-    if len(maf_list) == 0:
-        if patient_id:
-            typer.secho(
-                f"Could not find the facets-suite MAF file using patient id. {patient_id}",
-                err=True,
-                fg=typer.colors.BRIGHT_RED,
-            )
-        if sample_id:
-            typer.secho(
-                f"Could not find the facets-suite MAF file using sample id. {sample_id}",
-                err=True,
-                fg=typer.colors.BRIGHT_RED,
-            )
-        return None
-    elif len(maf_list) > 1:
-        maf_list = [Path(i) for i in maf_list]
-        maf_list_sorted = sorted(maf_list, key=lambda i: str(i.stem))
-        maf_list_sorted = [str(i) for i in maf_list]
-        return maf_list_sorted[0]
-    else:
-        maf_list_sorted = maf_list
-        return maf_list_sorted[0]
+def find_best_facet_file(facets_dir, dmp_id):
+
+    #TODO: simplify and test best fit function
     
-def get_best_fit_folder(facet_manifest_path):
-    """Get the best fit folder for the given facet manifest path
+    manifest_files = find_manifest_files(facets_dir, dmp_id)
+    manifest_data = []
+    for manifest in manifest_files:
+        manifest_path = Path(manifest)
+        manifest_df = read_manifest(manifest_path)
 
-    Args:
-        facet_manifest_path (str): manifest path to be used for determining best fit
+        if manifest_df.empty:
+            continue
 
-    Returns:
-        pathlib.Path: path to the folder containing best fit maf files
-    """
-    facet_manifest_path = Path(facet_manifest_path)
-    base_path = facet_manifest_path.parent
-    facet_manifest_all = read_manifest(facet_manifest_path)
+        # Ensure required columns exist
+        if not {"date_reviewed", "fit_name"}.issubset(manifest_df.columns):
+            continue
 
-    print(facet_manifest_all['date_reviewed'])
+        manifest_df["date_reviewed"] = pd.to_datetime(manifest_df["date_reviewed"], errors="coerce")
+        manifest_df = manifest_df[manifest_df["date_reviewed"].notna()]
 
-    facet_manifest_all['date_reviewed'] = pd.to_datetime(facet_manifest_all['date_reviewed'], errors='coerce')
-    facet_manifest_all = facet_manifest_all[facet_manifest_all['date_reviewed'].notna()]
+        # Add context to each row
+        manifest_df["manifest_dir"] = manifest_path.parent
+        manifest_data.append(manifest_df)
 
-    print(facet_manifest_all['date_reviewed'])
+    if not manifest_data:
+        return find_all_facets_files(facets_dir, dmp_id)
 
-    if facet_manifest_all['date_reviewed'].isnull().all():
-        return base_path.joinpath("default", "*[0-9].ccf.maf")
- 
-    #get facets_qc == TRUE rows
-    facet_manifest_true = facet_manifest_all.loc[facet_manifest_all.facets_qc]
-    #get review_status == reviewed_best_fit rows
-    facet_manifest = facet_manifest_true[facet_manifest_true.review_status.str.contains("reviewed_best_fit") == True]
-    if facet_manifest.empty:
-            return(base_path.joinpath("default", "*[0-9].ccf.maf")
-        )
-    #sort by date
-    facet_manifest_sort = facet_manifest.sort_values(by='date_reviewed',ascending=False)
-    print(facet_manifest_sort)
-    #take the first row
-    folder_name = facet_manifest_sort['fit_name'].iloc[0]
-    return (
-        (base_path.joinpath(folder_name, "*[0-9].ccf.maf"))
-        if "default" in folder_name or "alt" in folder_name
-        else (base_path.joinpath("default", "*[0-9].ccf.maf"))
-    )
-    
+    manifest_data_df = pd.concat(manifest_data, ignore_index=True)
 
-def read_manifest(manifest):
-    """_summary_
+    # Try to find reviewed_best_fit with facets_qc == True
+    reviewed_best = manifest_data_df[
+        manifest_data_df["review_status"].str.contains("reviewed_best_fit", na=False)
+        & (manifest_data_df["facets_qc"] == True)
+        ]
 
-    Args:
-        manifest (pathlib.PATH): _description_
-
-    Returns:
-        data_frame: _description_
-    """
-    skip_rows = get_row(manifest)
-    if manifest.suffix == ".csv":
-        return pd.read_csv(manifest, sep=",", skiprows=skip_rows, low_memory=False, keep_default_na=False)
+    if not reviewed_best.empty:
+        selected = reviewed_best.sort_values("date_reviewed", ascending=False).iloc[0]
     else:
-        return pd.read_csv(manifest, sep="\t", skiprows=skip_rows, low_memory=False, keep_default_na=False)
+        # Fall back to latest by date_reviewed
+        selected = manifest_data_df.sort_values("date_reviewed", ascending=False).iloc[0]
+
+    best_fit_folder = selected["manifest_dir"] / selected["fit_name"]
+    maf_glob = str(best_fit_folder / "*[0-9].ccf.maf")
+    maf_files = sorted(glob.glob(maf_glob))
+    return [maf_files[0]] if maf_files else []
+    
+def find_manifest_files(facets_dir, dmp_id):
+    base_path = Path(facets_dir) / dmp_id[:7]
+    manifest_glob = str(base_path / f"{dmp_id}*" / "facets_review.manifest")
+    manifest_files = sorted(glob.glob(manifest_glob))
+
+    if not manifest_files:
+        return []
+    return manifest_files
 
 
-def get_row(tsv_file):
-    """Function to skip rows
+def load_patient_data(patient_json):
+    with open(patient_json) as json_file:
+        patient_data = json.load(json_file)
+        return patient_data
 
-    Args:
-        tsv_file (file): file to be read
+def write_to_txt(facets_files, patient_id):
+    with open(f"{patient_id}_facets_fit.txt", "w") as output:
+        if facets_files:
+            for facet_file in facets_files:
+                output.write(f"{facet_file}\n")
+        else:
+            output.write("MISSING\n")
+        return f"{patient_id}_facets_fit.txt"
 
-    Returns:
-        list: lines to be skipped
-    """
-    skipped = []
-    with open(tsv_file, "r") as FH:
-        skipped.extend(i for i, line in enumerate(FH) if line.startswith("#"))
-    return skipped
+def read_manifest(manifest_path):
+    with open(manifest_path, "r") as f:
+        skip_rows = [i for i, line in enumerate(f) if line.startswith("#")]
+
+    sep = "," if manifest_path.suffix == ".csv" else "\t"
+    return pd.read_csv(manifest_path, sep=sep, skiprows=skip_rows, low_memory=False, keep_default_na=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find facets fit.")
-    parser.add_argument("--facet_path", required=True, help="Path to samples CSV file.")
+    parser.add_argument("--facets_dir", required=True, help="Path to samples CSV file.")
     parser.add_argument("--patient_json", required=True)
-    parser.add_argument("--sample_id", required=False)
     parser.add_argument("--best_fit", required=False)
     args = parser.parse_args()
 
-    with open(args.patient_json) as json_file:
-        patient_data = json.load(json_file)
+    get_facets_files(args.facets_dir, args.patient_json, args.best_fit)
 
-    patient_id = patient_data["dmp_id"]
-
-    generate_facet_maf_path(Path(args.facet_path), patient_id, None, args.best_fit)

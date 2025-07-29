@@ -92,7 +92,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     )
 
     FIND_FACETS_FIT(
-        params.facet_path,
+        params.base_dirs.clinical_impact.facets_dir,
         patient_json
 
     )

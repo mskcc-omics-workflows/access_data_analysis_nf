@@ -7,13 +7,13 @@ process FIND_FACETS_FIT {
         'ghcr.io/msk-access/genotype_variants:0.3.9' }"
 
     input:
-    val facet_path
+    val facets_dir
     path patient_json
 
-    publishDir 'output/intermediary/facets_fit', mode: 'copy'
+    publishDir "${params.outdir}/intermediary/facets_fit", mode: 'copy'
 
     output:
-    path "*facets_fit_path.txt", emit: facet_fit
+    path "*facets_fit.txt", emit: facets_fit
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,9 +22,8 @@ process FIND_FACETS_FIT {
 
     """
     python3 ../../../bin/facets_fit.py \\
-        --facet_path $facet_path \\
+        --facets_dir $facets_dir \\
         --patient_json $patient_json \\
-        --best_fit "True" \\
     """
 
 
