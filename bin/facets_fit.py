@@ -15,16 +15,11 @@ def get_facets_files(facets_dir, patient_json, best_fit):
     else:
         facets_files = find_all_facets_files(facets_dir, dmp_id)
 
-    print("facets_files")
-    print(facets_files)
-
     write_to_txt(facets_files, combined_id)
 
 def find_all_facets_files(facets_dir, dmp_id):
     patient_path = Path(facets_dir) / dmp_id[:7]
-    print(patient_path)
     maf_pattern = str(patient_path / f"{dmp_id}*" / "default" / "*[0-9].ccf.maf")
-    print(maf_pattern)
     return sorted(glob.glob(maf_pattern))
 
 def find_best_facet_file(facets_dir, dmp_id):
@@ -81,7 +76,6 @@ def find_manifest_files(facets_dir, dmp_id):
     if not manifest_files:
         return []
     return manifest_files
-
 
 def load_patient_data(patient_json):
     with open(patient_json) as json_file:
