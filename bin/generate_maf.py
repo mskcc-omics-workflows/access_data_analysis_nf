@@ -6,7 +6,7 @@ import argparse
 import json
 
 
-def get_all_calls(patient_json, research_access_mutations_maf, dmp_mutations_file, exclude_genes, exclude_classifications):
+def get_all_calls(patient_json, research_access_mutations_maf_template, dmp_mutations_file, exclude_genes, exclude_classifications):
     """
     Load patient data, get all mutation calls (research and clinical), merge and filter them, then write results to a file.
     """
@@ -16,7 +16,7 @@ def get_all_calls(patient_json, research_access_mutations_maf, dmp_mutations_fil
     combined_id = patient_data['combined_id']
 
     # Get the research and clinical calls from corresponding MAF files
-    research_calls = get_research_access_mutations(patient_data, research_access_mutations_maf)
+    research_calls = get_research_access_mutations(patient_data, research_access_mutations_maf_template)
     clinical_calls = get_clinical_mutations(patient_data, dmp_mutations_file)
 
     # Merge and filter the calls based on the exclude gene and classification lists
@@ -110,7 +110,7 @@ def filter_calls(calls_df, exclude_genes, exclude_classifications):
 
     return filtered_calls
     
-def get_research_access_mutations(patient_data, research_access_mutations_maf):
+def get_research_access_mutations(patient_data, research_access_mutations_maf_template):
     """
     Find every research samples in the patient_data, and parse the maf file for each sample. Collects all the calls into research_mutations list.
     """
@@ -124,7 +124,7 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf):
         # find each research sample in the patient_data
         for sample_id, sample_data in patient_data["samples"].items():
             if sample_data['assay_type'] == "research_access" and sample_data['tumor_normal'] == "tumor":
-                maf_path = research_access_mutations_maf.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
+                maf_path = research_access_mutations_maf_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
                 # add the variants from the maf file into the research_mutations list
                 research_mutations += parse_mutation_file(maf_path, "research", "")
     
@@ -168,7 +168,7 @@ def load_patient_data(patient_json):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate all called mutations MAF.")
     parser.add_argument("--patient_json", required=True)
-    parser.add_argument("--research_access_mutations_maf", required=True)
+    parser.add_argument("--research_access_mutations_maf_template", required=True)
     parser.add_argument("--dmp_mutations_file", required=True)
     parser.add_argument("--exclude_genes")
     parser.add_argument("--exclude_classifications")
@@ -177,5 +177,5 @@ if __name__ == "__main__":
     exclude_genes = args.exclude_genes.split(",")
     exclude_classifications = args.exclude_classifications.split(",")
 
-    get_all_calls(args.patient_json, args.research_access_mutations_maf, args.dmp_mutations_file, exclude_genes, exclude_classifications)
+    get_all_calls(args.patient_json, args.research_access_mutations_maf_template, args.dmp_mutations_file, exclude_genes, exclude_classifications)
 

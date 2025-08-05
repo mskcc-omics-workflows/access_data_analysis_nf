@@ -7,10 +7,9 @@ process FILTER_CALLS {
 
     input:
     path patient_json
-    path mafs
-    path facets_file
+    path facets_fit
 
-    publishDir 'output/final_results/small_variants', mode: 'copy'
+    publishDir "${params.outdir}/final_results/small_variants", mode: 'copy'
 
     output:
         path "*.csv", emit: snv_table
@@ -24,7 +23,7 @@ process FILTER_CALLS {
     """
     python3 ../../../bin/filter_calls.py \\
         --patient_json $patient_json \\
-        --facets_fit $facets_file \\
+        --facets_file $facets_fit \\
 
     """
 

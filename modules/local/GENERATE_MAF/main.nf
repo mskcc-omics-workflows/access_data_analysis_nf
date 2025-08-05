@@ -7,7 +7,7 @@ process GENERATE_MAF {
 
     input:
     path patient_json
-    val research_access_mutations_maf
+    val research_access_mutations_maf_template
     path dmp_mutations_file
     val exclude_genes
     val exclude_classifications
@@ -26,7 +26,7 @@ process GENERATE_MAF {
     """
     python3 ../../../bin/generate_maf.py \\
         --patient_json $patient_json \\
-        --research_access_mutations_maf $research_access_mutations_maf \\
+        --research_access_mutations_maf_template $research_access_mutations_maf_template \\
         --dmp_mutations_file $dmp_mutations_file \\
         --exclude_genes $exclude_genes \\
         --exclude_classifications $exclude_classifications \\

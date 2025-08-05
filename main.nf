@@ -61,7 +61,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     GENERATE_MAF(
         patient_json,
-        params.file_paths.research_access.variant_file.mutations,
+        params.file_paths.research_access.variant_file_template.mutations,
         params.file_paths.clinical_impact.variant_file.mutations,
         params.variant_filter_rules.exclude_genes,
         params.variant_filter_rules.exclude_classifications
@@ -70,19 +70,19 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     GENOTYPE_VARIANTS_INPUT(
         patient_json,
-                GENERATE_MAF.out.maf_results,
+        GENERATE_MAF.out.maf_results,
 
         // Research ACCESS templates
-        params.file_paths.research_access.bam_file.duplex,
-        params.file_paths.research_access.bam_file.simplex,
+        params.file_paths.research_access.bam_file_template.duplex,
+        params.file_paths.research_access.bam_file_template.simplex,
 
         // Clinical ACCESS templates
-        params.file_paths.clinical_access.bam_file.duplex,
-        params.file_paths.clinical_access.bam_file.simplex,
-        params.file_paths.clinical_access.bam_file.standard,
+        params.file_paths.clinical_access.bam_file_template.duplex,
+        params.file_paths.clinical_access.bam_file_template.simplex,
+        params.file_paths.clinical_access.bam_file_template.standard,
 
         // Clinical IMPACT templates
-        params.file_paths.clinical_impact.bam_file.standard
+        params.file_paths.clinical_impact.bam_file_template.standard
     )
 
     GENOTYPE_VARIANTS(
@@ -100,7 +100,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     FILTER_CALLS(
         patient_json,
         GENOTYPE_VARIANTS.out.genotyped_mafs,
-        FIND_FACETS_FIT.out.facet_fit
+        FIND_FACETS_FIT.out.facets_fit
     )
 
     //ACCESSANALYSIS (
@@ -140,7 +140,7 @@ workflow {
         params.exclude_samples_file,
         params.file_paths.clinical_access.key_file,
         params.file_paths.clinical_impact.key_file,
-        params.base_dirs.research_access.bam_dir,
+        params.base_dirs.research_access.bam_dir_template,
         params.clinical_access_sample_regex_pattern,
         params.clinical_impact_sample_regex_pattern
     )

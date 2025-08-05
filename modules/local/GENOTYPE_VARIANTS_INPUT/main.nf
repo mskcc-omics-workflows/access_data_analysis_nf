@@ -8,12 +8,12 @@ process GENOTYPE_VARIANTS_INPUT {
     input:
     path patient_json
     path all_calls_maf
-    val research_access_duplex_bam
-    val research_access_simplex_bam
-    val clinical_access_duplex_bam
-    val clinical_access_simplex_bam
-    val clinical_access_standard_bam
-    val clinical_impact_standard_bam
+    val research_access_duplex_bam_template
+    val research_access_simplex_bam_template
+    val clinical_access_duplex_bam_template
+    val clinical_access_simplex_bam_template
+    val clinical_access_standard_bam_template
+    val clinical_impact_standard_bam_template
 
     publishDir "${params.outdir}/intermediary/genotyping_input", mode: 'copy'
 
@@ -28,12 +28,12 @@ process GENOTYPE_VARIANTS_INPUT {
     python3 ../../../bin/genotype_variants_input.py \\
         --patient_json $patient_json \\
         --all_calls_maf $all_calls_maf \\
-        --research_access_duplex_bam $research_access_duplex_bam \\
-        --research_access_simplex_bam $research_access_simplex_bam \\
-        --clinical_access_duplex_bam $clinical_access_duplex_bam \\
-        --clinical_access_simplex_bam $clinical_access_simplex_bam \\
-        --clinical_access_standard_bam $clinical_access_standard_bam \\
-        --clinical_impact_standard_bam $clinical_impact_standard_bam \\
+        --research_access_duplex_bam_template $research_access_duplex_bam_template \\
+        --research_access_simplex_bam_template $research_access_simplex_bam_template \\
+        --clinical_access_duplex_bam_template $clinical_access_duplex_bam_template \\
+        --clinical_access_simplex_bam_template $clinical_access_simplex_bam_template \\
+        --clinical_access_standard_bam_template $clinical_access_standard_bam_template \\
+        --clinical_impact_standard_bam_template $clinical_impact_standard_bam_template \\
 
     """
 
