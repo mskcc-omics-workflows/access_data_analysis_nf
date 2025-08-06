@@ -46,15 +46,18 @@ def extract_bam_paths(patient_data, templates):
 
         # Research ACCESS: duplex bam and simplex bam from templates
         if assay == "research_access":
-            entry["duplex_bam"] = get_bams(sample_data, templates["research_access_duplex_bam_template"])
-            entry["simplex_bam"] = get_bams(sample_data, templates["research_access_simplex_bam_template"])
+            if tumor_normal == "tumor":
+                entry["duplex_bam"] = get_bams(sample_data, templates["research_access_duplex_bam_template"])
+                entry["simplex_bam"] = get_bams(sample_data, templates["research_access_simplex_bam_template"])
+            elif tumor_normal == "normal":
+                entry["standard_bam"] = get_bams(sample_data, templates["research_access_unfilter_bam_template"])
         # Clinical ACCESS duplex bam and simplex bam, or standard bam from templates
         elif assay == "clinical_access":
             if tumor_normal == "tumor":
                 entry["duplex_bam"] = get_bams(sample_data, templates["clinical_access_duplex_bam_template"])
                 entry["simplex_bam"] = get_bams(sample_data, templates["clinical_access_simplex_bam_template"])
             elif tumor_normal == "normal":
-                entry["standard_bam"] = get_bams(sample_data, templates["clinical_access_standard_bam_template"])
+                entry["standard_bam"] = get_bams(sample_data, templates["clinical_access_unfilter_bam_template"])
         # Clinical IMPACT, standard bam from template
         elif assay == "clinical_impact":
             entry["standard_bam"] = get_bams(sample_data, templates["clinical_impact_standard_bam_template"])
@@ -85,9 +88,10 @@ if __name__ == "__main__":
     bam_keys = [
         "research_access_duplex_bam_template",
         "research_access_simplex_bam_template",
+        "research_access_unfilter_bam_template",
         "clinical_access_duplex_bam_template",
         "clinical_access_simplex_bam_template",
-        "clinical_access_standard_bam_template",
+        "clinical_access_unfilter_bam_template",
         "clinical_impact_standard_bam_template"
     ]
 
@@ -99,9 +103,10 @@ if __name__ == "__main__":
     templates = {
         "research_access_duplex_bam_template": args.research_access_duplex_bam_template,
         "research_access_simplex_bam_template": args.research_access_simplex_bam_template,
+        "research_access_unfilter_bam_template": args.research_access_unfilter_bam_template,
         "clinical_access_duplex_bam_template": args.clinical_access_duplex_bam_template,
         "clinical_access_simplex_bam_template": args.clinical_access_simplex_bam_template,
-        "clinical_access_standard_bam_template": args.clinical_access_standard_bam_template,
+        "clinical_access_unfilter_bam_template": args.clinical_access_unfilter_bam_template,
         "clinical_impact_standard_bam_template": args.clinical_impact_standard_bam_template,
     }
 

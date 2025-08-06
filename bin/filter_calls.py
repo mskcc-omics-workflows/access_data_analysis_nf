@@ -3,163 +3,177 @@ import glob
 import pandas as pd
 import argparse
 import json
+from pathlib import Path
 
-def filter_calls(patient_json, facet_file):
+def generate_variant_table(patient_json, facets_file):
 
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-
-    facets_data = pd.read_csv(facet_file, sep="\t")
-    print(facets_data.columns.tolist())
-
-
-    patient_id = patient_data['cmo_patient_id']
+    patient_data = load_patient_data(patient_json)
+    combined_id = patient_data['combined_id']
+    cmo_id = patient_data['cmo_id']
+    dmp_id = patient_data['dmp_id']
 
     maf_cols = [
         'Hugo_Symbol', 'Chromosome', 'Start_Position', 'End_Position',
         'Variant_Classification', 'Reference_Allele', 'Tumor_Seq_Allele2'
     ]
 
-    patient_mafs = []
+    all_variants = []
 
-    for file in os.listdir("../../../results/genotyping"):
-        if patient_id in file and file.endswith(".maf"):
-            patient_mafs.append((os.path.join("../../../results/genotyping", file)))
-
-    
-    SNV_table = pd.DataFrame(columns=maf_cols)
-
+    patient_mafs = get_patient_mafs(cmo_id, dmp_id)
+    facets_list = read_facets_file_list(facets_file)
 
     for maf in patient_mafs:
-        print(maf)
-        maf_data = pd.read_csv(maf, sep='\t')
 
-
-        if "DUPLEX" in maf and "SIMPLEX" in maf and "ORG" not in maf:
-
-            if SNV_table.empty:
-                SNV_table = pd.concat([SNV_table, maf_data[maf_cols]])
-                SNV_table["Start_Position"] = SNV_table["Start_Position"].astype(int)
-                SNV_table["End_Position"] = SNV_table["End_Position"].astype(int)
-            # for each row in the maf
-            # create a column for the sample in the SNV_table
-            # calculate the VAF (t_alt_count_fragment_simplex_duplex/t_total_count_fragment_simplex_duplex)
-            # use the identifying variant columns (hugo symbol, chromosome, start position, end position)
-                # add the VAF to the row that corresponds to the correct variant into the new column for this sample
-
-            sample_name = os.path.basename(maf).replace("-SIMPLEX-DUPLEX_genotyped.maf", "")
-
-            # Compute VAF
-            maf_data["reads"] = "(" + maf_data["t_alt_count_fragment_simplex_duplex"].astype(str) + "/" + maf_data["t_total_count_fragment_simplex_duplex"].astype(str) + ")"
-
-            # Prepare mini table with variant info + VAF
-            sample_vaf_df = maf_data[maf_cols + ["reads"]].copy()
-            sample_vaf_df.rename(columns={"reads": sample_name}, inplace=True)
-            print(sample_vaf_df)
-
-            # Merge VAFs into SNV_table
-            SNV_table = SNV_table.merge(sample_vaf_df, on=maf_cols, how='left')
-            print(SNV_table)
-
-        
-        elif "-IM" in maf and "ORG-STD" in maf:
-            sample_name = os.path.basename(maf).replace("_genotyped.maf", "")
-
-            # Compute VAF
-            maf_data["reads"] = "(" + maf_data["t_alt_count_standard"].astype(str) + "/" + maf_data["t_total_count_standard"].astype(str) + ")"
-
-            # Prepare mini table with variant info + VAF
-            sample_vaf_df = maf_data[maf_cols + ["reads"]].copy()
-            sample_vaf_df.rename(columns={"reads": sample_name}, inplace=True)
-            print(sample_vaf_df)
-
-            # Merge VAFs into SNV_table
-            SNV_table = SNV_table.merge(sample_vaf_df, on=maf_cols, how='left')
-            print(SNV_table)
-
-        else:
+        maf_data = get_reads_from_maf(maf, maf_cols)
+        if maf_data is None or maf_data.empty:
+            print(f"[WARN] Skipping empty or invalid MAF: {maf}")
             continue
+        
+        print(f"[INFO] Using valid MAF: {maf}")
+        if facets_list:
+            for facets_file in facets_list:
+                facets_data = parse_facets_file(facets_file, maf_cols)
 
-    SNV_table = merge_facets_info(SNV_table, facet_file)
-    SNV_table['adjusted_VAF'] = SNV_table.apply(calculate_adjusted_vaf, axis=1)
+                if facets_data is None or facets_data.empty:
+                    print(f"[WARN] Skipping empty or invalid FACETS file: {facets_file}")
+                    for col in ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies']:
+                        maf_data[col] = "NA"
+                    all_variants.append(maf_data)
+                    continue
 
+                print(f"[INFO] Using valid FACETS: {facets_file}")
+                merged_data = maf_data.merge(facets_data, on=maf_cols, how='left', suffixes=('', '_facets'))
+                all_variants.append(merged_data)
+        else:
+            print(f'FACETS input list is empty')
+            for col in ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies']:
+                maf_data[col] = "NA"
+            all_variants.append(maf_data)
+        
+
+    all_variants_df = pd.concat(all_variants, ignore_index=True)
+
+    #calculate adjusted VAF
+    all_variants_df["adjusted_VAF"] = all_variants_df.apply(calculate_adjusted_vaf, axis=1)
+
+    all_variants_df.to_csv(f"{combined_id}_long_facets_SNV_table.csv", index=False)
+
+def parse_facets_file(facets_file, maf_cols):
+    """Load a FACETS file, validate required columns, and return cleaned DataFrame or None"""
+
+    required_cols = maf_cols + ['clonality', 'expected_alt_copies', 'tcn']
+    
+    try:
+        facets_data = pd.read_csv(facets_file, sep="\t")
+    except Exception as e:
+        print(f"[ERROR] Failed to read {facets_file}: {e}")
+        return None, None
+
+    if not set(required_cols).issubset(facets_data.columns):
+        print(f"[WARN] Skipping {facets_file}, missing required columns.")
+        return None, None
+
+    facets_data["Chromosome"] = facets_data["Chromosome"].astype(str)
+    facets_data["Start_Position"] = facets_data["Start_Position"].astype(int)
+    facets_data["End_Position"] = facets_data["End_Position"].astype(int)
+
+    facets_data['facets_impact_sample'] = Path(facets_file).parent.parent.name
+    facets_data['facets_fit'] = Path(facets_file).parent.name
+
+    output_cols = maf_cols + ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies']
+
+    facets_data_subset = facets_data[output_cols]
+
+    return facets_data_subset
+
+def get_reads_from_maf(maf, maf_cols):
+    maf_data = pd.read_csv(maf, sep='\t')
+
+    if "DUPLEX" in maf and "SIMPLEX" in maf and "ORG" not in maf:
+        sample_name = os.path.basename(maf).replace("-SIMPLEX-DUPLEX_genotyped.maf", "")
+        # Compute VAF
+        maf_data['t_alt_count'] = maf_data["t_alt_count_fragment_simplex_duplex"]
+        maf_data['t_total_count'] = maf_data["t_total_count_fragment_simplex_duplex"]
+        maf_data['VAF'] = maf_data['t_alt_count'] / maf_data['t_total_count']
+        maf_data['read_type'] = "SIMPLEX-DUPLEX"
+
+    elif "ORG-STD" in maf:
+        sample_name = os.path.basename(maf).replace("_genotyped.maf", "")
+        # Compute VAF
+        maf_data['t_alt_count'] = maf_data["t_alt_count_standard"]
+        maf_data['t_total_count'] = maf_data["t_total_count_standard"]
+        maf_data['VAF'] = maf_data['t_alt_count'] / maf_data['t_total_count']
+        maf_data['read_type'] = "ORG-STD"
+
+    else:
+        return None
+    
+    maf_data["Chromosome"] = maf_data["Chromosome"].astype(str)
+    maf_data["Start_Position"] = maf_data["Start_Position"].astype(int)
+    maf_data["End_Position"] = maf_data["End_Position"].astype(int)
+
+    maf_data['sample_name'] = sample_name
+    output_cols = ['sample_name'] + maf_cols + ['t_alt_count', 't_total_count', 'VAF', 'read_type']
+    maf_data_subset = maf_data[output_cols]
+
+    return maf_data_subset
+
+def load_patient_data(patient_json):
+    with open(patient_json) as json_file:
+        patient_data = json.load(json_file)
+    return patient_data
+
+def write_SNV_table(SNV_table, patient_id):
     SNV_table.to_csv(f"{patient_id}_SNV_table.csv", index=False)
     print(f"{patient_id}_SNV_table.csv created")
 
-def merge_facets_info(snv_df, facet_file):
-    """Merge clonality and CN info from FACETS into SNV table"""
+def get_patient_mafs(cmo_id, dmp_id):
+    patient_mafs = []
+    for file in os.listdir("../../../results_unfilter/intermediary/genotyped_mafs"):
+        if (cmo_id in file or dmp_id in file) and file.endswith(".maf"):
+            patient_mafs.append((os.path.join("../../../results_unfilter/intermediary/genotyped_mafs", file)))
+    return patient_mafs
 
-    print(f"[INFO] Loading facets file: {facet_file}")
-    facet_df = pd.read_csv(facet_file, sep="\t")
+def read_facets_file_list(txt_path):
+    try:
+        df = pd.read_csv(txt_path, sep="\t", usecols=["facets_path"])
+        df = df[df["facets_path"].notnull()]
+        df = df[~df["facets_path"].str.upper().eq("MISSING")]
+        return df["facets_path"].tolist()
+    except Exception as e:
+        print(f"[ERROR] Failed to read facets file list: {e}")
+        return []
 
-    maf_cols = [
-        'Hugo_Symbol', 'Chromosome', 'Start_Position', 'End_Position',
-        'Variant_Classification', 'Reference_Allele', 'Tumor_Seq_Allele2'
-    ]
-
-    # Columns to add from facets
-    extra_cols = ['clonality', 'expected_alt_copies', 'tcn']
-    required_cols = maf_cols + extra_cols
-
-    missing_cols = [col for col in required_cols if col not in facet_df.columns]
-    if missing_cols:
-        print(f"[WARN] Missing columns in FACETS file: {missing_cols}. Skipping merge.")
-        return snv_df
-
-    # Convert types and merge
-    facet_df["Start_Position"] = facet_df["Start_Position"].astype(int)
-    facet_df["End_Position"] = facet_df["End_Position"].astype(int)
-    facet_subset = facet_df[required_cols].drop_duplicates()
-
-    merged = snv_df.merge(facet_subset, on=maf_cols, how="left")
-    print("[INFO] Merged SNV table with FACETS info.")
-    return merged
-
-def calculate_adjusted_vaf(row):
+def calculate_adjusted_vaf(row): 
     """
     Calculate adjusted VAF based on clonality, total copy number (tcn),
     and expected alternate copies.
     """
+
     try:
-        vaf_str = row['reads']  # The "reads" column has format like "(alt_count/total_count)"
-        # Extract numeric VAF fraction from reads string
-        if pd.isna(vaf_str) or vaf_str == '':
-            return None
-        parts = vaf_str.strip("()").split("/")
-        alt_count = float(parts[0])
-        total_count = float(parts[1])
-        if total_count == 0:
-            return 0.0
-        vaf = alt_count / total_count
-    except Exception:
-        # If reads format or conversion fails, fallback
+        vaf = float(row['VAF'])
+    except (ValueError, TypeError):
         return None
 
-    clonality = row.get('clonality', None)
-    t = row.get('tcn', None)
-    exp = row.get('expected_alt_copies', None)
-    ncn = 2  # normal copy number assumption
-
-    if pd.isna(vaf) or vaf is None:
-        return None
-
-    if clonality == 'CLONAL' and pd.notna(t) and pd.notna(exp):
+    if row.get('clonality') == 'CLONAL':
         try:
-            t = float(t)
-            exp = float(exp)
-            adj_vaf = (vaf * ncn) / (exp + (ncn - t) * vaf)
+            t = float(row['tcn'])
+            exp = float(row['expected_alt_copies'])
+            ncn = 2
+            # adj_vaf = (n* vaf_value) / (exp + (n - t))
+            adj_vaf = ( vaf * ncn ) / (exp + (ncn - t) * vaf )
             return adj_vaf
-        except Exception:
+        except (ValueError, TypeError, ZeroDivisionError):
             return vaf
+
     else:
-        # For SUBCLONAL or unknown clonality, you can decide how to treat — here just return vaf
         return vaf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter calls.")
     parser.add_argument("--patient_json", required=True, help="Path to samples CSV file.")
-    parser.add_argument("--facet_file", required=True, help="Path to samples CSV file.")
+    parser.add_argument("--facets_file", required=True, help="Path to samples CSV file.")
 
     args = parser.parse_args()
 
-    filter_calls(args.patient_json, args.facet_file)
+    generate_variant_table(args.patient_json, args.facets_file)

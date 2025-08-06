@@ -69,24 +69,23 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
 
     GENOTYPE_VARIANTS_INPUT(
-        patient_json,
         GENERATE_MAF.out.maf_results,
 
         // Research ACCESS templates
         params.file_paths.research_access.bam_file_template.duplex,
         params.file_paths.research_access.bam_file_template.simplex,
+        params.file_paths.research_access.bam_file_template.unfilter,
 
         // Clinical ACCESS templates
         params.file_paths.clinical_access.bam_file_template.duplex,
         params.file_paths.clinical_access.bam_file_template.simplex,
-        params.file_paths.clinical_access.bam_file_template.standard,
+        params.file_paths.research_access.bam_file_template.unfilter,
 
         // Clinical IMPACT templates
         params.file_paths.clinical_impact.bam_file_template.standard
     )
 
     GENOTYPE_VARIANTS(
-        patient_json,
         GENOTYPE_VARIANTS_INPUT.out.genotyping_input,
         params.fasta_ref
     )
@@ -97,10 +96,12 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     )
 
+    GENOTYPE_VARIANTS.out.genotyped_mafs
+        .join(FIND_FACETS_FIT.out.facets_fit, by: 0)
+        .set { filter_calls_input }
+    
     FILTER_CALLS(
-        patient_json,
-        GENOTYPE_VARIANTS.out.genotyped_mafs,
-        FIND_FACETS_FIT.out.facets_fit
+        filter_calls_input
     )
 
     //ACCESSANALYSIS (

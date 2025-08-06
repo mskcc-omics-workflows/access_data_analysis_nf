@@ -6,13 +6,12 @@ process FILTER_CALLS {
         'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
 
     input:
-    path patient_json
-    path facets_fit
+    tuple path(patient_json), path(genotyping_output), path(facets_fit)
 
-    publishDir "${params.outdir}/final_results/small_variants", mode: 'copy'
+    publishDir "${params.outdir}/final_results/small_variants", mode: 'copy', pattern: '*.csv'
 
     output:
-        path "*.csv", emit: snv_table
+        tuple path(patient_json), path("*.csv"), emit: snv_table
 
 
     when:

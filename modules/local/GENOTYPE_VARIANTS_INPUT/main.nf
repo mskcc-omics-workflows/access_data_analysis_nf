@@ -6,19 +6,19 @@ process GENOTYPE_VARIANTS_INPUT {
         'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
 
     input:
-    path patient_json
-    path all_calls_maf
+    tuple path(patient_json), path(all_calls_maf)
     val research_access_duplex_bam_template
     val research_access_simplex_bam_template
+    val research_access_unfilter_bam_template
     val clinical_access_duplex_bam_template
     val clinical_access_simplex_bam_template
-    val clinical_access_standard_bam_template
+    val clinical_access_unfilter_bam_template
     val clinical_impact_standard_bam_template
 
-    publishDir "${params.outdir}/intermediary/genotyping_input", mode: 'copy'
+    publishDir "${params.outdir}/intermediary/genotyping_input", mode: 'copy', pattern: '*genotyping_input.tsv'
 
     output:
-    path "*genotyping_input.tsv", emit: genotyping_input
+        tuple path(patient_json), path ("*genotyping_input.tsv"), emit: genotyping_input
 
     when:
     task.ext.when == null || task.ext.when
@@ -30,9 +30,10 @@ process GENOTYPE_VARIANTS_INPUT {
         --all_calls_maf $all_calls_maf \\
         --research_access_duplex_bam_template $research_access_duplex_bam_template \\
         --research_access_simplex_bam_template $research_access_simplex_bam_template \\
+        --research_access_unfilter_bam_template $research_access_unfilter_bam_template \\
         --clinical_access_duplex_bam_template $clinical_access_duplex_bam_template \\
         --clinical_access_simplex_bam_template $clinical_access_simplex_bam_template \\
-        --clinical_access_standard_bam_template $clinical_access_standard_bam_template \\
+        --clinical_access_unfilter_bam_template $clinical_access_unfilter_bam_template \\
         --clinical_impact_standard_bam_template $clinical_impact_standard_bam_template \\
 
     """

@@ -10,10 +10,10 @@ process FIND_FACETS_FIT {
     val facets_dir
     path patient_json
 
-    publishDir "${params.outdir}/intermediary/facets_fit", mode: 'copy'
+    publishDir "${params.outdir}/intermediary/facets_fit", mode: 'copy', pattern: '*facets_fit.txt'
 
     output:
-    path "*facets_fit.txt", emit: facets_fit
+        tuple path(patient_json), path("*facets_fit.txt"), emit: facets_fit
 
     when:
     task.ext.when == null || task.ext.when
