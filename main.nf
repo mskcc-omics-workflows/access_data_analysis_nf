@@ -79,7 +79,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         // Clinical ACCESS templates
         params.file_paths.clinical_access.bam_file_template.duplex,
         params.file_paths.clinical_access.bam_file_template.simplex,
-        params.file_paths.research_access.bam_file_template.unfilter,
+        params.file_paths.clinical_access.bam_file_template.unfilter,
 
         // Clinical IMPACT templates
         params.file_paths.clinical_impact.bam_file_template.standard
