@@ -119,7 +119,7 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf_te
     research_mutations = []
 
     if not cmo_id:
-        print(f"Patient {patient_data['combined_id']} does not have a CMO ID. Not checking for clinical calls.")
+        return research_mutations
     else:
         # find each research sample in the patient_data
         for sample_id, sample_data in patient_data["samples"].items():
@@ -137,7 +137,7 @@ def get_clinical_mutations(patient_data, dmp_mutations_file):
     clinical_mutations = []
 
     if not dmp_id:
-        print(f"Patient {patient_data['combined_id']} does not have a DMP ID. Not checking for clinical calls.")
+        return clinical_mutations
     else:
          clinical_mutations = parse_mutation_file(dmp_mutations_file, "clinical", dmp_id)
 

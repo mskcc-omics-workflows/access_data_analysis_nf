@@ -40,7 +40,7 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
         
         # If the patient has a dmp id, find any samples that need to be included/excluded, then get all clinical samples
         if dmp_id:
-            dmp_exclude_list = get_exclude_list(include_samples_file, dmp_id)
+            dmp_exclude_list = get_exclude_list(exclude_samples_file, dmp_id)
             find_clinical_samples(clinical_impact_key_file, clinical_access_key_file, dmp_id, combined_id, dmp_exclude_list, sample_dict, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern)
  
         # Save the final dictionary to json

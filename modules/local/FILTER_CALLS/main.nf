@@ -23,7 +23,7 @@ process FILTER_CALLS {
     python3 ../../../bin/filter_calls.py \\
         --patient_json $patient_json \\
         --facets_file $facets_fit \\
-
+ 
     """
 
 }

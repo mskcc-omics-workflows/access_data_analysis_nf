@@ -96,9 +96,9 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     )
 
-    GENOTYPE_VARIANTS.out.genotyped_mafs
-        .join(FIND_FACETS_FIT.out.facets_fit, by: 0)
-        .set { filter_calls_input }
+    filter_calls_input = GENOTYPE_VARIANTS.out.genotyped_mafs.map { geno -> [ geno[0].getName(), geno ] }
+                            .join(FIND_FACETS_FIT.out.facets_fit.map { facets -> [ facets[0].getName(), facets ] }, by: 0)
+                            .map { id, geno, facets -> [geno[0], geno[1], facets[1]] }
     
     FILTER_CALLS(
         filter_calls_input

@@ -26,26 +26,21 @@ def generate_variant_table(patient_json, facets_file):
 
         maf_data = get_reads_from_maf(maf, maf_cols)
         if maf_data is None or maf_data.empty:
-            print(f"[WARN] Skipping empty or invalid MAF: {maf}")
             continue
         
-        print(f"[INFO] Using valid MAF: {maf}")
         if facets_list:
             for facets_file in facets_list:
                 facets_data = parse_facets_file(facets_file, maf_cols)
 
                 if facets_data is None or facets_data.empty:
-                    print(f"[WARN] Skipping empty or invalid FACETS file: {facets_file}")
                     for col in ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies']:
                         maf_data[col] = "NA"
                     all_variants.append(maf_data)
                     continue
 
-                print(f"[INFO] Using valid FACETS: {facets_file}")
                 merged_data = maf_data.merge(facets_data, on=maf_cols, how='left', suffixes=('', '_facets'))
                 all_variants.append(merged_data)
         else:
-            print(f'FACETS input list is empty')
             for col in ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies']:
                 maf_data[col] = "NA"
             all_variants.append(maf_data)
@@ -56,7 +51,7 @@ def generate_variant_table(patient_json, facets_file):
     #calculate adjusted VAF
     all_variants_df["adjusted_VAF"] = all_variants_df.apply(calculate_adjusted_vaf, axis=1)
 
-    all_variants_df.to_csv(f"{combined_id}_long_facets_SNV_table.csv", index=False)
+    all_variants_df.to_csv(f"{combined_id}_SNV_table.csv", index=False)
 
 def parse_facets_file(facets_file, maf_cols):
     """Load a FACETS file, validate required columns, and return cleaned DataFrame or None"""
