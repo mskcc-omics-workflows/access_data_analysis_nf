@@ -25,6 +25,7 @@ include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/ma
 include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
 include { FIND_FACETS_FIT         } from './modules/local/FIND_FACETS_FIT/main'
 include { FILTER_CALLS         } from './modules/local/FILTER_CALLS/main'
+include { COPY_NUMBER         } from './modules/local/COPY_NUMBER/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,13 +96,19 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         patient_json
 
     )
-
+                            
     filter_calls_input = GENOTYPE_VARIANTS.out.genotyped_mafs.map { geno -> [ geno[0].getName(), geno ] }
                             .join(FIND_FACETS_FIT.out.facets_fit.map { facets -> [ facets[0].getName(), facets ] }, by: 0)
                             .map { id, geno, facets -> [geno[0], geno[1], facets[1]] }
-    
+
     FILTER_CALLS(
         filter_calls_input
+    )
+
+    COPY_NUMBER (
+        patient_json,
+        params.file_paths.research_access.variant_file_template.cna,
+        params.file_paths.clinical_impact.variant_file.cna
     )
 
     //ACCESSANALYSIS (
