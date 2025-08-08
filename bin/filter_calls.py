@@ -124,9 +124,9 @@ def write_SNV_table(SNV_table, patient_id):
 
 def get_patient_mafs(cmo_id, dmp_id):
     patient_mafs = []
-    for file in os.listdir("../../../results_unfilter/intermediary/genotyped_mafs"):
+    for file in os.listdir("../../../results/intermediary/genotyped_mafs"):
         if (cmo_id in file or dmp_id in file) and file.endswith(".maf"):
-            patient_mafs.append((os.path.join("../../../results_unfilter/intermediary/genotyped_mafs", file)))
+            patient_mafs.append((os.path.join("../../../results/intermediary/genotyped_mafs", file)))
     return patient_mafs
 
 def read_facets_file_list(txt_path):
