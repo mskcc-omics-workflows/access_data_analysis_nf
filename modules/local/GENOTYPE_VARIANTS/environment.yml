@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+name: "genotypevariants"
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip=24.0
+  - numpy=1.23.5
+  - pandas=1.5.3
+  - pip:
+    - genotype_variants==0.3.5
+  
