@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-def generate_variant_table(patient_json, facets_file):
+def generate_variant_table(patient_json, genotyped_mafs, facets_file):
 
     patient_data = load_patient_data(patient_json)
     combined_id = patient_data['combined_id']
@@ -17,9 +17,11 @@ def generate_variant_table(patient_json, facets_file):
         'Variant_Classification', 'Reference_Allele', 'Tumor_Seq_Allele2'
     ]
 
+    output_cols = maf_cols + ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies', 'adjusted_VAF']
+
     all_variants = []
 
-    patient_mafs = get_patient_mafs(cmo_id, dmp_id)
+    patient_mafs = genotyped_mafs
     facets_list = read_facets_file_list(facets_file)
 
     for maf in patient_mafs:
@@ -45,11 +47,12 @@ def generate_variant_table(patient_json, facets_file):
                 maf_data[col] = "NA"
             all_variants.append(maf_data)
         
-
-    all_variants_df = pd.concat(all_variants, ignore_index=True)
-
-    #calculate adjusted VAF
-    all_variants_df["adjusted_VAF"] = all_variants_df.apply(calculate_adjusted_vaf, axis=1)
+    if all_variants:
+        all_variants_df = pd.concat(all_variants, ignore_index=True)
+        all_variants_df["adjusted_VAF"] = all_variants_df.apply(calculate_adjusted_vaf, axis=1)
+    else:
+        all_variants_df = pd.DataFrame(columns=output_cols)
+        all_variants_df["adjusted_VAF"] = pd.Series(dtype='float64')
 
     all_variants_df.to_csv(f"{combined_id}_SNV_table.csv", index=False)
 
@@ -122,13 +125,6 @@ def write_SNV_table(SNV_table, patient_id):
     SNV_table.to_csv(f"{patient_id}_SNV_table.csv", index=False)
     print(f"{patient_id}_SNV_table.csv created")
 
-def get_patient_mafs(cmo_id, dmp_id):
-    patient_mafs = []
-    for file in os.listdir("../../../results/intermediary/genotyped_mafs"):
-        if (cmo_id in file or dmp_id in file) and file.endswith(".maf"):
-            patient_mafs.append((os.path.join("../../../results/intermediary/genotyped_mafs", file)))
-    return patient_mafs
-
 def read_facets_file_list(txt_path):
     try:
         df = pd.read_csv(txt_path, sep="\t", usecols=["facets_path"])
@@ -167,8 +163,9 @@ def calculate_adjusted_vaf(row):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter calls.")
     parser.add_argument("--patient_json", required=True, help="Path to samples CSV file.")
+    parser.add_argument("--genotyped_mafs", nargs="+", required=True)
     parser.add_argument("--facets_file", required=True, help="Path to samples CSV file.")
 
     args = parser.parse_args()
 
-    generate_variant_table(args.patient_json, args.facets_file)
+    generate_variant_table(args.patient_json, args.genotyped_mafs, args.facets_file)
