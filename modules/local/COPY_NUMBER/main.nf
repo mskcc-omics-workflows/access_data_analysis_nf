@@ -9,6 +9,8 @@ process COPY_NUMBER {
     path patient_json
     val research_access_cna_template
     path clinical_cna_file
+    val access_copy_number_gene_list
+    val research_access_copy_number_p_value_filter
 
     publishDir "${params.outdir}/final_results/copy_number_variants", mode: 'copy', pattern: '*_CNA_calls.csv'
 
@@ -25,6 +27,8 @@ process COPY_NUMBER {
         --patient_json $patient_json \\
         --research_access_cna_template $research_access_cna_template \\
         --clinical_cna_file $clinical_cna_file \\
+        --access_copy_number_gene_list $access_copy_number_gene_list \\
+        --research_access_copy_number_p_value_filter $research_access_copy_number_p_value_filter \\
     """
 
 }
