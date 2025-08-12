@@ -25,6 +25,7 @@ include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/ma
 include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
 include { FIND_FACETS_FIT         } from './modules/local/FIND_FACETS_FIT/main'
 include { FILTER_CALLS         } from './modules/local/FILTER_CALLS/main'
+include { STRUCTURAL_VARIANTS         } from './modules/local/STRUCTURAL_VARIANTS/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,6 +60,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     // WORKFLOW: Run pipeline
     //
 
+    """
     GENERATE_MAF(
         patient_json,
         params.file_paths.research_access.variant_file_template.mutations,
@@ -102,6 +104,15 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     FILTER_CALLS(
         filter_calls_input
+    )
+    """
+
+    STRUCTURAL_VARIANTS(
+        patient_json,
+        params.file_paths.research_access.variant_file_template.sv,
+        params.file_paths.clinical_access.variant_file.sv,
+        params.file_paths.clinical_impact.variant_file.sv,
+        params.access_structural_variant_gene_list
     )
 
     //ACCESSANALYSIS (
