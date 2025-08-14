@@ -20,8 +20,12 @@ def generate_msi_table(patient_json, reseach_access_msi_template, clinical_acces
 
     all_msi_scores_df = pd.concat([research_access_msi_scores_df, clinical_access_msi_scores_df, clinical_impact_msi_scores_df], ignore_index=True)
     all_msi_scores_df["patient_id"] = combined_id
+    all_msi_scores_df["cmo_patient_id"] = cmo_id
+    all_msi_scores_df["dmp_patient_id"] = dmp_id
 
-    save_to_csv(all_msi_scores_df, combined_id)
+    final_df = all_msi_scores_df[['sample_id', 'patient_id', 'cmo_patient_id', 'dmp_patient_id', 'MSI_score', 'MSI_status']]
+
+    save_to_csv(final_df, combined_id, "MSI")
 
 def get_research_access_msi_data(patient_data, cmo_id, reseach_access_msi_template):
     research_access_msi_scores = []
@@ -76,9 +80,10 @@ def load_patient_data(patient_json):
         combined_id = patient_data['combined_id']
     return patient_data, cmo_id, dmp_id, combined_id
 
-def save_to_csv(df, patient_id):
-    df.to_csv(f'{patient_id}_MSI_scores.csv', index=False)
-    print(f'{patient_id}_MSI_scores.csv has been created.')
+def save_to_csv(df, patient_id, var_tag):
+    output_file = f'{patient_id}_{var_tag}.csv'
+    df.to_csv(output_file, index=False)
+    print(f'{output_file} has been created.')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BAM paths.")

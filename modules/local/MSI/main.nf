@@ -11,10 +11,10 @@ process MSI {
     path clinical_access_msi_file
     path clinical_impact_msi_file
 
-    publishDir "${params.outdir}/final_results/microsatellite_instability", mode: 'copy', pattern: '*_MSI_scores.csv'
+    publishDir "${params.outdir}/final_results/microsatellite_instability", mode: 'copy', pattern: '*_MSI.csv'
 
     output:
-        tuple path(patient_json), path("*_MSI_scores.csv"), emit: msi_results
+        tuple path(patient_json), path("*_MSI.csv"), emit: msi_results
 
     when:
     task.ext.when == null || task.ext.when
