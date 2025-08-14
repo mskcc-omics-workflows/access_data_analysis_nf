@@ -12,10 +12,10 @@ process COPY_NUMBER {
     val access_copy_number_gene_list
     val research_access_copy_number_p_value_filter
 
-    publishDir "${params.outdir}/final_results/copy_number_variants", mode: 'copy', pattern: '*_CNA_calls.csv'
+    publishDir "${params.outdir}/final_results/copy_number_variants", mode: 'copy', pattern: '*_CNA.csv'
 
     output:
-        tuple path(patient_json), path('*_CNA_calls.csv'), emit: copy_number_results
+        tuple path(patient_json), path('*_CNA.csv'), emit: copy_number_results
 
     when:
     task.ext.when == null || task.ext.when

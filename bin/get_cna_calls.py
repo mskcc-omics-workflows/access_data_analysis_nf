@@ -11,28 +11,31 @@ def get_all_copy_number_calls(patient_json, research_access_cna_template, clinic
     patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
     
     clinical_copy_number_calls = get_all_clinical_copy_number_calls(dmp_id, clinical_cna_file)
-    clinical_copy_number_calls['combined_id'] = combined_id
+    clinical_copy_number_calls['patient_id'] = combined_id
 
     research_copy_number_calls = get_research_access_copy_number_calls(patient_data, cmo_id, research_access_cna_template, research_access_copy_number_p_value_filter)
-    research_copy_number_calls['combined_id'] = combined_id
+    research_copy_number_calls['patient_id'] = combined_id
 
     all_copy_number_calls = merge_and_rescue_calls(clinical_copy_number_calls, research_copy_number_calls, access_copy_number_gene_list)
-    return save_to_csv(all_copy_number_calls, combined_id)
+
+    all_copy_number_calls["cmo_patient_id"] = cmo_id
+    all_copy_number_calls["dmp_patient_id"] = dmp_id
+    all_copy_number_calls = all_copy_number_calls[["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "hugo_symbol", "site", "fold_change", "p_val", "CNA_plasma", "CNA_tumor"]]
+
+    return save_to_csv(all_copy_number_calls, combined_id, "CNA")
 
 def merge_and_rescue_calls(clinical_copy_number_calls, research_copy_number_calls, access_copy_number_gene_list):
 
     if not clinical_copy_number_calls.empty:
-        clinical_subset = clinical_copy_number_calls[['hugo_symbol', 'combined_id', 'CNA_tumor']]
-        all_copy_number_calls = research_copy_number_calls.merge(clinical_subset, how='left', on=["hugo_symbol", "combined_id"])
+        clinical_subset = clinical_copy_number_calls[['hugo_symbol', 'patient_id', 'CNA_tumor']]
+        all_copy_number_calls = research_copy_number_calls.merge(clinical_subset, how='left', on=["hugo_symbol", "patient_id"])
     else: 
         all_copy_number_calls = research_copy_number_calls
         all_copy_number_calls['CNA_tumor'] = np.nan
 
     all_copy_number_calls['CNA_plasma'] = all_copy_number_calls.apply(assign_cna_category, axis=1)
     all_copy_number_calls = all_copy_number_calls[all_copy_number_calls['CNA_plasma'] != "NA"]
-    all_copy_number_calls = all_copy_number_calls.drop_duplicates(subset=['cmo_id', 'sample_id', 'hugo_symbol', 'site'])
-
-    all_copy_number_calls = all_copy_number_calls[["combined_id", "sample_id", "hugo_symbol", "site", "fold_change", "p_val", "CNA_plasma", "CNA_tumor"]]
+    all_copy_number_calls = all_copy_number_calls.drop_duplicates(subset=['cmo_patient_id', 'sample_id', 'hugo_symbol', 'site'])
 
     return all_copy_number_calls
 
@@ -65,10 +68,10 @@ def get_all_clinical_copy_number_calls(dmp_id, clinical_cna_file):
                         fc = row[index]
                         if fc and fc!= '0':
                             hugo_symbol = row[0]
-                            clinical_cna_calls.append({"dmp_id": dmp_id, "sample_id": sample_col, "hugo_symbol": hugo_symbol, "fold_change": fc})
+                            clinical_cna_calls.append({"dmp_patient_id": dmp_id, "sample_id": sample_col, "hugo_symbol": hugo_symbol, "fold_change": fc})
  
     if not clinical_cna_calls:
-        clinical_cna_calls_df = pd.DataFrame(columns=["dmp_id", "sample_id", "hugo_symbol", "fold_change", "CNA_tumor"])
+        clinical_cna_calls_df = pd.DataFrame(columns=["dmp_patient_id", "sample_id", "hugo_symbol", "fold_change", "CNA_tumor"])
     else:
         clinical_cna_calls_df = pd.DataFrame(clinical_cna_calls)
         clinical_cna_calls_df["fold_change"] = pd.to_numeric(clinical_cna_calls_df["fold_change"])
@@ -95,10 +98,10 @@ def get_research_access_copy_number_calls(patient_data, cmo_id, research_access_
                         p_val = row["p.adj"]
                         site = row["Cyt"]
 
-                        research_access_cna_calls.append({"cmo_id": cmo_id, "sample_id": sample_id, "hugo_symbol": hugo, "site": site, "fold_change": fc, "p_val": p_val})
+                        research_access_cna_calls.append({"cmo_patient_id": cmo_id, "sample_id": sample_id, "hugo_symbol": hugo, "site": site, "fold_change": fc, "p_val": p_val})
 
     if not research_access_cna_calls:
-        research_access_cna_calls_df = pd.DataFrame(columns=["cmo_id", "sample_id", "hugo_symbol", "site", "fold_change", "p_val", "CNA_tumor"])
+        research_access_cna_calls_df = pd.DataFrame(columns=["cmo_patient_id", "sample_id", "hugo_symbol", "site", "fold_change", "p_val", "CNA_tumor"])
     else:
         research_access_cna_calls_df = pd.DataFrame(research_access_cna_calls)
         if research_access_copy_number_p_value_filter:
@@ -123,9 +126,10 @@ def load_patient_data(patient_json):
         combined_id = patient_data['combined_id']
     return patient_data, cmo_id, dmp_id, combined_id
 
-def save_to_csv(df, patient_id):
-    df.to_csv(f"{patient_id}test__all_CNA_calls.csv", index=False)
-    print(f'{patient_id}_all_CNA_calls.csv has been created.')
+def save_to_csv(df, patient_id, var_tag):
+    output_file = f'{patient_id}_{var_tag}.csv'
+    df.to_csv(output_file, index=False)
+    print(f'{output_file} has been created.')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get CNA calls.")
