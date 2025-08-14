@@ -12,10 +12,10 @@ process STRUCTURAL_VARIANTS {
     path clinical_impact_sv_file, name: "clinical_impact_data.txt"
     val access_structural_variant_gene_list
 
-    publishDir "${params.outdir}/final_results/structural_variants", mode: 'copy', pattern: "*SV_calls.csv"
+    publishDir "${params.outdir}/final_results/structural_variants", mode: 'copy', pattern: "*SV.csv"
 
     output:
-        tuple path(patient_json), path("*SV_calls.csv"), emit: sv_results
+        tuple path(patient_json), path("*SV.csv"), emit: sv_results
 
     when:
     task.ext.when == null || task.ext.when

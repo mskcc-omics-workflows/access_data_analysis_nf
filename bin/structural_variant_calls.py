@@ -9,7 +9,7 @@ import sys
 def generate_sv_table(patient_json, research_access_sv_template, clinical_access_sv_file, clinical_impact_sv_file, access_structural_variant_gene_list):
     
     patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
-    sv_columns = ["sample_id", "sv_type", "gene_1", "gene_2", "chr_1", "pos_1", "chr_2", "pos_2", "tumor_split_read_count", "tumor_paired_read_count", "tumor_read_count", "notes"]
+    sv_columns = ["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "sv_type", "gene_1", "gene_2", "chr_1", "pos_1", "chr_2", "pos_2", "tumor_split_read_count", "tumor_paired_read_count", "tumor_read_count", "notes"]
 
     research_access_sv_calls = get_research_access_sv_calls(research_access_sv_template, patient_data, cmo_id, access_structural_variant_gene_list)
     clinical_access_sv_calls = get_clinical_access_sv_calls(clinical_access_sv_file, dmp_id, access_structural_variant_gene_list)
@@ -22,7 +22,10 @@ def generate_sv_table(patient_json, research_access_sv_template, clinical_access
     all_sv_calls_df = pd.concat([research_access_sv_calls_df, clinical_access_sv_calls_df, clinical_impact_sv_calls_df], ignore_index=True)
 
     all_sv_calls_df["patient_id"] = combined_id
-    save_to_csv(all_sv_calls_df, combined_id)
+    all_sv_calls_df["cmo_patient_id"] = cmo_id
+    all_sv_calls_df["dmp_patient_id"] = dmp_id
+
+    save_to_csv(all_sv_calls_df, combined_id, "SV")
 
 def get_research_access_sv_calls(research_access_sv_template, patient_data, cmo_id, access_structural_variant_gene_list):
 
@@ -130,10 +133,10 @@ def load_patient_data(patient_json):
         combined_id = patient_data['combined_id']
     return patient_data, cmo_id, dmp_id, combined_id
 
-def save_to_csv(df, patient_id):
-    df.to_csv(f'{patient_id}_SV_calls.csv', index=False)
-    print(f'{patient_id}_SV_calls.csv has been created.')
-
+def save_to_csv(df, patient_id, var_tag):
+    output_file = f'{patient_id}_{var_tag}.csv'
+    df.to_csv(output_file, index=False)
+    print(f'{output_file} has been created.')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BAM paths.")
