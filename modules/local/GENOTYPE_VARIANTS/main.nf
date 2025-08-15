@@ -1,6 +1,6 @@
 process GENOTYPE_VARIANTS {
     tag "$patient_json"
-    label 'process_single'
+    label 'genotype_variants'
 
     conda "${moduleDir}/environment.yml"
 
