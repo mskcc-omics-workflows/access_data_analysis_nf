@@ -25,6 +25,7 @@ include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/ma
 include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
 include { FIND_FACETS_FIT         } from './modules/local/FIND_FACETS_FIT/main'
 include { FILTER_CALLS         } from './modules/local/FILTER_CALLS/main'
+include { COPY_NUMBER         } from './modules/local/COPY_NUMBER/main'
 include { STRUCTURAL_VARIANTS         } from './modules/local/STRUCTURAL_VARIANTS/main'
 include { MSI         } from './modules/local/MSI/main'
 
@@ -60,8 +61,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     //
     // WORKFLOW: Run pipeline
     //
-
-    """
+  
     GENERATE_MAF(
         patient_json,
         params.file_paths.research_access.variant_file_template.mutations,
@@ -106,7 +106,6 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     FILTER_CALLS(
         filter_calls_input
     )
-    """
 
     STRUCTURAL_VARIANTS(
         patient_json,
@@ -116,14 +115,20 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         params.access_structural_variant_gene_list
     )
 
-    """
-
     MSI(
         patient_json,
         params.file_paths.research_access.variant_file_template.msi,
         params.file_paths.clinical_access.variant_file.msi,
         params.file_paths.clinical_impact.variant_file.msi
 
+    )
+
+    COPY_NUMBER (
+        patient_json,
+        params.file_paths.research_access.variant_file_template.cna,
+        params.file_paths.clinical_impact.variant_file.cna,
+        params.access_copy_number_gene_list,
+        params.research_access_copy_number_p_value_filter
     )
 
     //ACCESSANALYSIS (
