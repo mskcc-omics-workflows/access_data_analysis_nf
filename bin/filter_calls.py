@@ -1,6 +1,7 @@
 import os
 import glob
 import pandas as pd
+import numpy as np
 import argparse
 import json
 from pathlib import Path
@@ -17,7 +18,7 @@ def generate_variant_table(patient_json, genotyped_mafs, facets_file):
         'Variant_Classification', 'Reference_Allele', 'Tumor_Seq_Allele2'
     ]
 
-    output_cols = maf_cols + ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies', 'adjusted_VAF']
+    output_cols = ['sample_id', 'patient_id', 'cmo_patient_id', 'dmp_patient_id'] + maf_cols + ['t_alt_count', 't_total_count', 'VAF', 'read_type', 'facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies', 'adjusted_VAF']
 
     all_variants = []
 
@@ -54,7 +55,13 @@ def generate_variant_table(patient_json, genotyped_mafs, facets_file):
         all_variants_df = pd.DataFrame(columns=output_cols)
         all_variants_df["adjusted_VAF"] = pd.Series(dtype='float64')
 
-    all_variants_df.to_csv(f"{combined_id}_SNV_table.csv", index=False)
+    all_variants_df['patient_id'] = combined_id
+    all_variants_df['cmo_patient_id'] = cmo_id
+    all_variants_df['dmp_patient_id'] = dmp_id
+
+    ordered_columns_df = all_variants_df[output_cols]
+
+    save_to_csv(ordered_columns_df, combined_id, "SNV")
 
 def parse_facets_file(facets_file, maf_cols):
     """Load a FACETS file, validate required columns, and return cleaned DataFrame or None"""
@@ -110,8 +117,8 @@ def get_reads_from_maf(maf, maf_cols):
     maf_data["Start_Position"] = maf_data["Start_Position"].astype(int)
     maf_data["End_Position"] = maf_data["End_Position"].astype(int)
 
-    maf_data['sample_name'] = sample_name
-    output_cols = ['sample_name'] + maf_cols + ['t_alt_count', 't_total_count', 'VAF', 'read_type']
+    maf_data['sample_id'] = sample_name
+    output_cols = ['sample_id'] + maf_cols + ['t_alt_count', 't_total_count', 'VAF', 'read_type']
     maf_data_subset = maf_data[output_cols]
 
     return maf_data_subset
@@ -121,9 +128,10 @@ def load_patient_data(patient_json):
         patient_data = json.load(json_file)
     return patient_data
 
-def write_SNV_table(SNV_table, patient_id):
-    SNV_table.to_csv(f"{patient_id}_SNV_table.csv", index=False)
-    print(f"{patient_id}_SNV_table.csv created")
+def save_to_csv(df, patient_id, var_tag):
+    output_file = f'{patient_id}_{var_tag}.csv'
+    df.to_csv(output_file, index=False)
+    print(f'{output_file} has been created.')
 
 def read_facets_file_list(txt_path):
     try:
@@ -144,7 +152,7 @@ def calculate_adjusted_vaf(row):
     try:
         vaf = float(row['VAF'])
     except (ValueError, TypeError):
-        return None
+        return np.nan
 
     if row.get('clonality') == 'CLONAL':
         try:
@@ -155,10 +163,10 @@ def calculate_adjusted_vaf(row):
             adj_vaf = ( vaf * ncn ) / (exp + (ncn - t) * vaf )
             return adj_vaf
         except (ValueError, TypeError, ZeroDivisionError):
-            return vaf
+            return np.nan
 
     else:
-        return vaf
+        return np.nan
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter calls.")

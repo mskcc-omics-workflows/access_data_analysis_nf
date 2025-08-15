@@ -8,10 +8,10 @@ process FILTER_CALLS {
     input:
     tuple path(patient_json), path(genotyping_output), path(facets_fit)
 
-    publishDir "${params.outdir}/final_results/small_variants", mode: 'copy', pattern: '*.csv'
+    publishDir "${params.outdir}/final_results/small_variants", mode: 'copy', pattern: '*SNV.csv'
 
     output:
-        tuple path(patient_json), path("*.csv"), emit: snv_table
+        tuple path(patient_json), path("*SNV.csv"), emit: snv_results
 
 
     when:
