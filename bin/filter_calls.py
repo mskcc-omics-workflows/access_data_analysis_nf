@@ -1,6 +1,7 @@
 import os
 import glob
 import pandas as pd
+import numpy as np
 import argparse
 import json
 from pathlib import Path
@@ -151,7 +152,7 @@ def calculate_adjusted_vaf(row):
     try:
         vaf = float(row['VAF'])
     except (ValueError, TypeError):
-        return None
+        return np.nan
 
     if row.get('clonality') == 'CLONAL':
         try:
@@ -162,10 +163,10 @@ def calculate_adjusted_vaf(row):
             adj_vaf = ( vaf * ncn ) / (exp + (ncn - t) * vaf )
             return adj_vaf
         except (ValueError, TypeError, ZeroDivisionError):
-            return vaf
+            return np.nan
 
     else:
-        return vaf
+        return np.nan
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter calls.")
