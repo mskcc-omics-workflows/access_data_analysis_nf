@@ -26,6 +26,7 @@ include { GENERATE_MAF         } from './modules/local/GENERATE_MAF/main'
 include { FIND_FACETS_FIT         } from './modules/local/FIND_FACETS_FIT/main'
 include { FILTER_CALLS         } from './modules/local/FILTER_CALLS/main'
 include { STRUCTURAL_VARIANTS         } from './modules/local/STRUCTURAL_VARIANTS/main'
+include { MSI         } from './modules/local/MSI/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,6 +114,16 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         params.file_paths.clinical_access.variant_file.sv,
         params.file_paths.clinical_impact.variant_file.sv,
         params.access_structural_variant_gene_list
+    )
+
+    """
+
+    MSI(
+        patient_json,
+        params.file_paths.research_access.variant_file_template.msi,
+        params.file_paths.clinical_access.variant_file.msi,
+        params.file_paths.clinical_impact.variant_file.msi
+
     )
 
     //ACCESSANALYSIS (
