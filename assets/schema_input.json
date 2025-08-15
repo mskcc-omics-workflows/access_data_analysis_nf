@@ -2,32 +2,21 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/nf-core/accessanalysis/master/assets/schema_input.json",
     "title": "nf-core/accessanalysis pipeline - params.input schema",
-    "description": "Schema for the file provided with params.input",
+    "description": "Schema for the id_mappings.csv provided with params.input",
     "type": "array",
     "items": {
         "type": "object",
         "properties": {
-            "sample": {
+            "cmo_patient_id": {
                 "type": "string",
-                "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces",
-                "meta": ["id"]
+                "pattern": "^$|^C-[A-Z0-9]+$",
+                "errorMessage": "cmo_patient_id must be empty or follow the format 'C-XXXXXX'"
             },
-            "fastq_1": {
+            "dmp_patient_id": {
                 "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
-            },
-            "fastq_2": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^$|^P-[A-Z0-9]+$",
+                "errorMessage": "dmp_patient_id must be empty or follow the format 'P-XXXXXX'"
             }
-        },
-        "required": ["sample", "fastq_1"]
+        }
     }
 }
