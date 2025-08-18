@@ -164,8 +164,8 @@ workflow {
 
     INFER_SAMPLES (
         PIPELINE_INITIALISATION.out.samplesheet,
-        params.include_samples_file,
-        params.exclude_samples_file,
+        params.include_samples_file ?: "$projectDir/assets/NO_INCLUDE_FILE",
+        params.exclude_samples_file ?: "$projectDir/assets/NO_EXCLUDE_FILE",
         params.file_paths.clinical_access.key_file,
         params.file_paths.clinical_impact.key_file,
         params.base_dirs.research_access.bam_dir_template,
