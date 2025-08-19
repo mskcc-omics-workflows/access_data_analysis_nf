@@ -275,6 +275,9 @@
         "base_dirs": {
             "type": "object"
         },
+        "biometrics" : {
+             "type" : "object"
+        },
         "file_paths": {
             "type": "object"
         },
