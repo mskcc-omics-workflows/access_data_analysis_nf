@@ -59,7 +59,7 @@ def generate_variant_table(patient_json, genotyped_mafs, facets_file):
 
     ordered_columns_df = all_variants_df[output_cols]
 
-    save_to_csv(ordered_columns_df, combined_id, "SNV")
+    save_to_csv(ordered_columns_df, combined_id, "SNV-INDEL")
 
 def parse_facets_file(facets_file, maf_cols):
     """Load a FACETS file, validate required columns, and return cleaned DataFrame or None"""
