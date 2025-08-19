@@ -4,10 +4,10 @@ process BIOMETRICS_GENOTYPE {
     conda "${moduleDir}/environment.yml"
 
     input:
-    tuple path(patient_json), val(patient_id), path(biometrics_input), path(biometrics_extract_db)
+    tuple val(patient_id), path(biometrics_input), path(biometrics_extract_db)
 
     output:
-    tuple path(patient_json), val(patient_id), path("${patient_id}.genotype_comparison.csv"), emit: biometrics_genotype
+    tuple val(patient_id), path("${patient_id}.genotype_comparison.csv"), emit: biometrics_genotype
 
     publishDir "${params.outdir}/intermediary/biometrics_genotype", mode: 'copy', pattern: '*.genotype_comparison.csv'
 

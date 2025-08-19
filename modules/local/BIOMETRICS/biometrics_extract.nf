@@ -5,13 +5,13 @@ process BIOMETRICS_EXTRACT {
     conda "${moduleDir}/environment.yml"
 
     input:
-    tuple path(patient_json), val(patient_id), path(biometrics_input)
+    tuple val(patient_id), path(biometrics_input)
     path fasta_ref
     path biometrics_bed
     path biometrics_vcf
 
     output:
-    tuple path(patient_json), val(patient_id), path(biometrics_input), path("${patient_id}"), emit: biometrics_extract
+    tuple val(patient_id), path(biometrics_input), path("${patient_id}"), emit: biometrics_extract
 
     publishDir "${params.outdir}/intermediary/biometrics_extract_db", mode: 'copy', pattern: "${patient_id}"
 

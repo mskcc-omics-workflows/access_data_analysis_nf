@@ -1,4 +1,5 @@
 process CREATE_BIOMETRICS_INPUT {
+    tag "$patient_id"
     label 'process_single'
 
     input:
@@ -10,7 +11,7 @@ process CREATE_BIOMETRICS_INPUT {
     publishDir "${params.outdir}/intermediary/biometrics_input", mode: 'copy', pattern: '*biometrics_input.csv'
 
     output:
-        tuple path(patient_json), val(patient_id), path ("*biometrics_input.csv"), emit: biometrics_input
+        tuple val(patient_id), path ("*biometrics_input.csv"), emit: biometrics_input
 
     when:
     task.ext.when == null || task.ext.when

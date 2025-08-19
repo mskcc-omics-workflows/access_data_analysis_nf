@@ -3,10 +3,10 @@ process BIOMETRICS_QC_RESULT {
     label 'biometrics_qc_result'
 
     input:
-    tuple path(patient_json), val(patient_id), path(biometrics_genotype_csv)
+    tuple val(patient_id), path(biometrics_genotype_csv)
 
     output:
-    tuple path(patient_json), val(patient_id), path("${patient_id}.biometrics_qc_result.csv"), emit: biometrics_qc_result
+    tuple val(patient_id), path("${patient_id}.biometrics_qc_result.csv"), emit: biometrics_qc_result
 
     // Only publish the QC result CSV
     publishDir "${params.outdir}/final_results/biometrics", mode: 'copy', pattern: '*.biometrics_qc_result.csv'
