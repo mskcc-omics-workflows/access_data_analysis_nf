@@ -8,7 +8,7 @@ process CREATE_BIOMETRICS_INPUT {
     val clinical_access_standard_bam_template
     val clinical_impact_standard_bam_template
 
-    publishDir "${params.outdir}/intermediary/biometrics_input", mode: 'copy', pattern: '*biometrics_input.csv'
+    publishDir "${params.outdir}/intermediary/biometrics/input", mode: 'copy', pattern: '*biometrics_input.csv'
 
     output:
         tuple val(patient_id), path ("*biometrics_input.csv"), emit: biometrics_input

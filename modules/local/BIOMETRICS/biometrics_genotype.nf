@@ -9,7 +9,7 @@ process BIOMETRICS_GENOTYPE {
     output:
     tuple val(patient_id), path("${patient_id}.genotype_comparison.csv"), emit: biometrics_genotype
 
-    publishDir "${params.outdir}/intermediary/biometrics_genotype", mode: 'copy', pattern: '*.genotype_comparison.csv'
+    publishDir "${params.outdir}/intermediary/biometrics/genotype", mode: 'copy', pattern: '*.genotype_comparison.csv'
 
     script:
     """

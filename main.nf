@@ -22,7 +22,7 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_acce
 include { CREATE_BIOMETRICS_INPUT } from './modules/local/BIOMETRICS/create_biometrics_input'
 include { BIOMETRICS_EXTRACT } from './modules/local/BIOMETRICS/biometrics_extract'
 include { BIOMETRICS_GENOTYPE } from './modules/local/BIOMETRICS/biometrics_genotype'
-include { BIOMETRICS_QC_RESULT } from './modules/local/BIOMETRICS/biometrics_qc_result'
+include { BIOMETRICS_SUMMARY } from './modules/local/BIOMETRICS/biometrics_summary'
 include { INFER_SAMPLES         } from './modules/local/INFER_SAMPLES/main'
 include { GENOTYPE_VARIANTS_INPUT         } from './modules/local/GENOTYPE_VARIANTS_INPUT/main'
 include { GENOTYPE_VARIANTS         } from './modules/local/GENOTYPE_VARIANTS/main'
@@ -88,7 +88,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
    
     BIOMETRICS_GENOTYPE(BIOMETRICS_EXTRACT.out.biometrics_extract)
 
-    BIOMETRICS_QC_RESULT(BIOMETRICS_GENOTYPE.out.biometrics_genotype)
+    BIOMETRICS_SUMMARY(BIOMETRICS_GENOTYPE.out.biometrics_genotype)
 
 //    GENERATE_MAF(
 //        patient_json,
