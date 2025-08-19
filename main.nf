@@ -90,74 +90,72 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
     BIOMETRICS_SUMMARY(BIOMETRICS_GENOTYPE.out.biometrics_genotype)
 
-//    GENERATE_MAF(
-//        patient_json,
-//        params.file_paths.research_access.variant_file_template.mutations,
-//        params.file_paths.clinical_impact.variant_file.mutations,
-//        params.variant_filter_rules.exclude_genes,
-//        params.variant_filter_rules.exclude_classifications
-//    )
+    GENERATE_MAF(
+        patient_json,
+        params.file_paths.research_access.variant_file_template.mutations,
+        params.file_paths.clinical_impact.variant_file.mutations,
+        params.variant_filter_rules.exclude_genes,
+        params.variant_filter_rules.exclude_classifications
+    )
 
 
-//    GENOTYPE_VARIANTS_INPUT(
-//        GENERATE_MAF.out.maf_results,
+    GENOTYPE_VARIANTS_INPUT(
+        GENERATE_MAF.out.maf_results,
 
-//        // Research ACCESS templates
-//        params.file_paths.research_access.bam_file_template.duplex,
-//        params.file_paths.research_access.bam_file_template.simplex,
-//        params.file_paths.research_access.bam_file_template.unfilter,
+        // Research ACCESS templates
+        params.file_paths.research_access.bam_file_template.duplex,
+        params.file_paths.research_access.bam_file_template.simplex,
+        params.file_paths.research_access.bam_file_template.unfilter,
 
-//        // Clinical ACCESS templates
-//        params.file_paths.clinical_access.bam_file_template.duplex,
-//        params.file_paths.clinical_access.bam_file_template.simplex,
-//        params.file_paths.clinical_access.bam_file_template.unfilter,
+        // Clinical ACCESS templates
+        params.file_paths.clinical_access.bam_file_template.duplex,
+        params.file_paths.clinical_access.bam_file_template.simplex,
+        params.file_paths.clinical_access.bam_file_template.unfilter,
 
-//        // Clinical IMPACT templates
-//        params.file_paths.clinical_impact.bam_file_template.standard
-//    )
+        // Clinical IMPACT templates
+        params.file_paths.clinical_impact.bam_file_template.standard
+    )
 
-//    GENOTYPE_VARIANTS(
-//        GENOTYPE_VARIANTS_INPUT.out.genotyping_input,
-//        params.fasta_ref
-//    )
+    GENOTYPE_VARIANTS(
+        GENOTYPE_VARIANTS_INPUT.out.genotyping_input,
+        params.fasta_ref
+    )
 
-//    FIND_FACETS_FIT(
-//        params.base_dirs.clinical_impact.facets_dir,
-//        patient_json
-//
-//    )
+    FIND_FACETS_FIT(
+        params.base_dirs.clinical_impact.facets_dir,
+        patient_json
+    )
                             
-//    filter_calls_input = GENOTYPE_VARIANTS.out.genotyped_mafs.map { geno -> [ geno[0].getName(), geno ] }
-//                            .join(FIND_FACETS_FIT.out.facets_fit.map { facets -> [ facets[0].getName(), facets ] }, by: 0)
-//                            .map { id, geno, facets -> [geno[0], geno[1], facets[1]] }
+    filter_calls_input = GENOTYPE_VARIANTS.out.genotyped_mafs.map { geno -> [ geno[0].getName(), geno ] }
+                            .join(FIND_FACETS_FIT.out.facets_fit.map { facets -> [ facets[0].getName(), facets ] }, by: 0)
+                            .map { id, geno, facets -> [geno[0], geno[1], facets[1]] }
 
-//    FILTER_CALLS(
-//        filter_calls_input
-//    )
+    FILTER_CALLS(
+        filter_calls_input
+    )
 
-//    STRUCTURAL_VARIANTS(
-//        patient_json,
-//        params.file_paths.research_access.variant_file_template.sv,
-//        params.file_paths.clinical_access.variant_file.sv,
-//        params.file_paths.clinical_impact.variant_file.sv,
-//        params.access_structural_variant_gene_list
-//    )
+    STRUCTURAL_VARIANTS(
+        patient_json,
+        params.file_paths.research_access.variant_file_template.sv,
+        params.file_paths.clinical_access.variant_file.sv,
+        params.file_paths.clinical_impact.variant_file.sv,
+        params.access_structural_variant_gene_list
+    )
 
-//    MSI(
-//        patient_json,
-//        params.file_paths.research_access.variant_file_template.msi,
-//        params.file_paths.clinical_access.variant_file.msi,
-//        params.file_paths.clinical_impact.variant_file.msi
+    MSI(
+        patient_json,
+        params.file_paths.research_access.variant_file_template.msi,
+        params.file_paths.clinical_access.variant_file.msi,
+        params.file_paths.clinical_impact.variant_file.msi
+    )
 
-//    )
-
-//    COPY_NUMBER (
-//        patient_json,
-//        params.file_paths.research_access.variant_file_template.cna,
-//        params.file_paths.clinical_impact.variant_file.cna,
-//        params.access_copy_number_gene_list,
-//        params.research_access_copy_number_p_value_filter
-//    )
+    COPY_NUMBER (
+        patient_json,
+        params.file_paths.research_access.variant_file_template.cna,
+        params.file_paths.clinical_impact.variant_file.cna,
+        params.access_copy_number_gene_list,
+        params.research_access_copy_number_p_value_filter
+    )
 
     //ACCESSANALYSIS (
     //    samplesheet
@@ -192,8 +190,8 @@ workflow {
 
     INFER_SAMPLES (
         PIPELINE_INITIALISATION.out.samplesheet,
-        params.include_samples_file,
-        params.exclude_samples_file,
+        params.include_samples_file ?: "$projectDir/assets/NO_INCLUDE_FILE",
+        params.exclude_samples_file ?: "$projectDir/assets/NO_EXCLUDE_FILE",
         params.file_paths.clinical_access.key_file,
         params.file_paths.clinical_impact.key_file,
         params.base_dirs.research_access.bam_dir_template,

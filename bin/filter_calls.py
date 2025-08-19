@@ -26,7 +26,6 @@ def generate_variant_table(patient_json, genotyped_mafs, facets_file):
     facets_list = read_facets_file_list(facets_file)
 
     for maf in patient_mafs:
-
         maf_data = get_reads_from_maf(maf, maf_cols)
         if maf_data is None or maf_data.empty:
             continue
@@ -34,7 +33,6 @@ def generate_variant_table(patient_json, genotyped_mafs, facets_file):
         if facets_list:
             for facets_file in facets_list:
                 facets_data = parse_facets_file(facets_file, maf_cols)
-
                 if facets_data is None or facets_data.empty:
                     for col in ['facets_impact_sample', 'facets_fit', 'clonality', 'tcn', 'expected_alt_copies']:
                         maf_data[col] = "NA"
@@ -72,11 +70,11 @@ def parse_facets_file(facets_file, maf_cols):
         facets_data = pd.read_csv(facets_file, sep="\t")
     except Exception as e:
         print(f"[ERROR] Failed to read {facets_file}: {e}")
-        return None, None
+        return None
 
     if not set(required_cols).issubset(facets_data.columns):
         print(f"[WARN] Skipping {facets_file}, missing required columns.")
-        return None, None
+        return None
 
     facets_data["Chromosome"] = facets_data["Chromosome"].astype(str)
     facets_data["Start_Position"] = facets_data["Start_Position"].astype(int)

@@ -21,7 +21,7 @@ def get_all_copy_number_calls(patient_json, research_access_cna_template, clinic
     all_copy_number_calls = pd.concat([clinical_copy_number_calls, classified_research_access_calls], ignore_index=True)
     all_copy_number_calls["cmo_patient_id"] = cmo_id
     all_copy_number_calls["dmp_patient_id"] = dmp_id
-    all_copy_number_calls = all_copy_number_calls[["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "hugo_symbol", "site", "fold_change", "p_val", "p_val_filter", "fc_filter"]]
+    all_copy_number_calls = all_copy_number_calls[["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "hugo_symbol", "site", "fold_change", "p_val", "p_val_filter", "fc_filter", "cna_type"]]
 
     return save_to_csv(all_copy_number_calls, combined_id, "CNA")
 
@@ -58,16 +58,23 @@ def get_all_clinical_copy_number_calls(dmp_id, clinical_cna_file):
             for index, sample_col in enumerate(sample_cols[1:], start=1):
                 if str(dmp_id) in sample_col:
                     for row in dmp_data[1:]:
-                        fc = row[index]
-                        if fc and fc!= '0':
+                        cna_type_num = row[index]
+                        if cna_type_num and cna_type_num!= '0' and cna_type_num != "":
                             hugo_symbol = row[0]
-                            clinical_cna_calls.append({"dmp_patient_id": dmp_id, "sample_id": sample_col, "hugo_symbol": hugo_symbol, "fold_change": fc})
+                            cna_type_num = float(cna_type_num)
+                            if cna_type_num == 2:
+                                cna_type = "AMP"
+                            elif cna_type_num <= -1.5:
+                                cna_type = "DeepDel"
+                            else:
+                                cna_type = "Unknown"
+                            clinical_cna_calls.append({"dmp_patient_id": dmp_id, "sample_id": sample_col, "hugo_symbol": hugo_symbol, "cna_type": cna_type})
  
     if not clinical_cna_calls:
-        clinical_cna_calls_df = pd.DataFrame(columns=["dmp_patient_id", "sample_id", "hugo_symbol", "fold_change"])
+        clinical_cna_calls_df = pd.DataFrame(columns=["dmp_patient_id", "sample_id", "hugo_symbol", "cna_type"])
     else:
         clinical_cna_calls_df = pd.DataFrame(clinical_cna_calls)
-        clinical_cna_calls_df["fold_change"] = pd.to_numeric(clinical_cna_calls_df["fold_change"])
+#        clinical_cna_calls_df["fold_change"] = pd.to_numeric(clinical_cna_calls_df["fold_change"])
     
     return clinical_cna_calls_df
 
