@@ -66,7 +66,7 @@ def load_patient_json(patient_json):
 
 def write_biometrics_table(df, patient_id):
     """ Save the biometrics input dataframe (with BAM paths + metadata) as a tsv. """
-    output_path = f"{patient_id}_biometrics_input.csv"
+    output_path = f"{patient_id}.biometrics_input.csv"
     df.to_csv(output_path, sep=",", index=False)
     print(f"[INFO] Biometrics input saved to: {output_path}")
     return output_path
