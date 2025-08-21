@@ -36,7 +36,7 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
             # named 'NO_INCLUDE_FILE' when no include file is actually provided. We need to detect this special
             # case and skip filtering when this placeholder is used. This is a temporary workaround that should
             # be replaced with a more elegant solution in future pipeline versions.
-            if include_samples_file and not os.path.basename(include_samples_file) == "NO_INCLUDE_FILE":
+            if include_samples_file: # and not os.path.basename(include_samples_file) == "NO_INCLUDE_FILE":
                 include_list = get_include_list(include_samples_file, cmo_id)
                 research_samples = [s for s in research_samples if s in include_list]
             

@@ -23,15 +23,19 @@ process INFER_SAMPLES {
     script:
 
     """
-    python3 ../../../bin/infer_samples.py \\
+    command="python3 ../../../bin/infer_samples.py \\
         --id_mapping_file $id_mapping_file \\
-        --include_samples_file $include_samples_file \\
-        --exclude_samples_file $exclude_samples_file \\
         --clinical_access_key_file $clinical_access_key_file \\
         --clinical_impact_key_file $clinical_impact_key_file \\
         --research_access_bam_dir_template $research_access_bam_dir_template \\
         --clinical_access_sample_regex_pattern '$clinical_access_sample_regex_pattern' \\
-        --clinical_impact_sample_regex_pattern '$clinical_impact_sample_regex_pattern' \\
+        --clinical_impact_sample_regex_pattern '$clinical_impact_sample_regex_pattern'"
+    if [ -s "$include_samples_file" ]; then
+        command="\$command   --include_samples_file \"$include_samples_file\""
+    fi
+    if [ -s "$exclude_samples_file" ]; then
+        command="\$command   --exclude_samples_file \"$exclude_samples_file\""
+    fi
+    \$command
     """
-
 }
