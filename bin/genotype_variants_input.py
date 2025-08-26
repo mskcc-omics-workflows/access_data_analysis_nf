@@ -1,9 +1,8 @@
 import os
-import json
 import pandas as pd
 import argparse
-import subprocess
 from infer_bams import get_bams
+from utils import load_patient_data, save_to_tsv
 
 """ 
 Script to create input metadata table required for genotype_variants. Gets all the relevant bams for a set of samples in the input patient JSON.
@@ -18,17 +17,15 @@ def build_input_table(patient_json, templates, all_calls_maf):
 
     required_cols = ['patient_id', 'sample_id', 'standard_bam', 'duplex_bam', 'simplex_bam', 'maf']
 
-    patient_data = load_patient_json(patient_json)
-    combined_id = patient_data['combined_id']
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
     bam_paths = extract_bam_paths(patient_data, templates)
     
     bam_paths_df = pd.DataFrame(bam_paths)
-    #bam_paths_df['patient_id'] = combined_id
     bam_paths_df['maf'] = os.path.realpath(all_calls_maf)
 
     bam_paths_df = bam_paths_df.reindex(columns=required_cols, fill_value="NA")
 
-    write_genotyping_table(bam_paths_df, combined_id)
+    save_to_tsv(bam_paths_df, combined_id, "genotyping_input", "tsv")
 
 def extract_bam_paths(patient_data, templates):
     """
@@ -67,18 +64,6 @@ def extract_bam_paths(patient_data, templates):
     
     # return the list of bam_paths, where each row is a sample and the columns are the different bam types
     return bam_paths
-
-def load_patient_json(patient_json):
-    """ Load the JSON file containing all metadata about the patient and their samples. """
-    with open(patient_json) as json_file:
-        return json.load(json_file)
-
-def write_genotyping_table(df, patient_id):
-    """ Save the genotyping input dataframe (with BAM paths + metadata) as a tsv. """
-    output_path = f"{patient_id}_genotyping_input.tsv"
-    df.to_csv(output_path, sep="\t", index=False)
-    print(f"[INFO] Genotyping input saved to: {output_path}")
-    return output_path
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

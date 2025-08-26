@@ -1,10 +1,7 @@
 import csv
 import pandas as pd
-import os
-import re
 import argparse
-import json
-import sys
+from utils import load_patient_data, save_to_csv, is_valid_path
 
 def generate_sv_table(patient_json, research_access_sv_template, clinical_access_sv_file, clinical_impact_sv_file, access_structural_variant_gene_list):
     
@@ -118,25 +115,6 @@ def get_clinical_impact_sv_calls(clinical_impact_sv_file, dmp_id, access_structu
                             "tumor_read_count": row["Tumor_Read_Count"], 
                             "notes": row["Event_Info"]})
     return clinical_impact_sv_calls
-
-def is_valid_path(path):
-    if not os.path.isfile(os.path.realpath(path)):
-        print(f"[WARNING] file not found: {path}.")
-        return False
-    return True
-
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        cmo_id = patient_data['cmo_id']
-        dmp_id = patient_data['dmp_id']
-        combined_id = patient_data['combined_id']
-    return patient_data, cmo_id, dmp_id, combined_id
-
-def save_to_csv(df, patient_id, var_tag):
-    output_file = f'{patient_id}_{var_tag}.csv'
-    df.to_csv(output_file, index=False)
-    print(f'{output_file} has been created.')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BAM paths.")

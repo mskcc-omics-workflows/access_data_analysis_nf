@@ -1,17 +1,13 @@
 import os
-import glob
 import pandas as pd
 import numpy as np
 import argparse
-import json
 from pathlib import Path
+from utils import load_patient_data, save_to_csv
 
 def generate_variant_table(patient_json, genotyped_mafs, facets_file):
 
-    patient_data = load_patient_data(patient_json)
-    combined_id = patient_data['combined_id']
-    cmo_id = patient_data['cmo_id']
-    dmp_id = patient_data['dmp_id']
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
 
     maf_cols = [
         'Hugo_Symbol', 'Chromosome', 'Start_Position', 'End_Position',
@@ -122,16 +118,6 @@ def get_reads_from_maf(maf, maf_cols):
     maf_data_subset = maf_data[output_cols]
 
     return maf_data_subset
-
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-    return patient_data
-
-def save_to_csv(df, patient_id, var_tag):
-    output_file = f'{patient_id}_{var_tag}.csv'
-    df.to_csv(output_file, index=False)
-    print(f'{output_file} has been created.')
 
 def read_facets_file_list(txt_path):
     try:

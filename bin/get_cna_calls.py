@@ -1,10 +1,8 @@
 import csv
 import pandas as pd
-import os
-import re
 import argparse
-import json
 import numpy as np
+from utils import load_patient_data, save_to_csv, is_valid_path
 
 def get_all_copy_number_calls(patient_json, research_access_cna_template, clinical_cna_file, access_copy_number_gene_list, research_access_copy_number_p_value_filter):
 
@@ -108,25 +106,10 @@ def get_research_access_copy_number_calls(patient_data, cmo_id, research_access_
 
 def infer_research_cna_path(research_access_cna_template, cmo_id, sample_id):
     research_cna_path = research_access_cna_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
-
-    if not os.path.isfile(os.path.realpath(research_cna_path)):
-        print(f"[WARNING] CNA file not found: {research_cna_path}.")
+    if is_valid_path(research_cna_path):
+        return research_cna_path
+    else:
         return False
-    
-    return research_cna_path
-
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        cmo_id = patient_data['cmo_id']
-        dmp_id = patient_data['dmp_id']
-        combined_id = patient_data['combined_id']
-    return patient_data, cmo_id, dmp_id, combined_id
-
-def save_to_csv(df, patient_id, var_tag):
-    output_file = f'{patient_id}_{var_tag}.csv'
-    df.to_csv(output_file, index=False)
-    print(f'{output_file} has been created.')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get CNA calls.")

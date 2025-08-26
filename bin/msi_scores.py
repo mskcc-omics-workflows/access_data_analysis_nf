@@ -1,8 +1,7 @@
 import csv
 import pandas as pd
 import argparse
-import json
-import os
+from utils import load_patient_data, save_to_csv, is_valid_path
 
 def generate_msi_table(patient_json, reseach_access_msi_template, clinical_access_msi_file, clinical_impact_msi_file):
 
@@ -41,11 +40,10 @@ def get_research_access_msi_data(patient_data, cmo_id, reseach_access_msi_templa
 
 def infer_research_access_msi_path(reseach_access_msi_template, cmo_id, sample_id):
     research_access_msi_path = reseach_access_msi_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
-    print(research_access_msi_path)
-    if not os.path.isfile(os.path.realpath(research_access_msi_path)):
-        print(f"[WARNING] MSI file not found: {research_access_msi_path}.")
+    if is_valid_path(research_access_msi_path):
+        return research_access_msi_path
+    else:
         return False
-    return research_access_msi_path
 
 def get_clinical_access_msi_data(dmp_id, clinical_access_msi_file):
     clinical_access_msi_scores = []
@@ -71,19 +69,6 @@ def get_clinical_impact_msi_data(dmp_id, clinical_impact_msi_file):
             if str(dmp_id) in str(row['PATIENT_ID']):
                 clinical_impact_msi_scores.append({'sample_id': row['SAMPLE_ID'], 'MSI_score': row['MSI_SCORE'], 'coverage': row['SAMPLE_COVERAGE'], 'MSI_status': row['MSI_TYPE'], 'note': row['SO_COMMENTS'], 'tumor_purity': row['TUMOR_PURITY']})
     return clinical_impact_msi_scores
-
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        cmo_id = patient_data['cmo_id']
-        dmp_id = patient_data['dmp_id']
-        combined_id = patient_data['combined_id']
-    return patient_data, cmo_id, dmp_id, combined_id
-
-def save_to_csv(df, patient_id, var_tag):
-    output_file = f'{patient_id}_{var_tag}.csv'
-    df.to_csv(output_file, index=False)
-    print(f'{output_file} has been created.')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BAM paths.")

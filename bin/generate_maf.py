@@ -1,9 +1,7 @@
 import csv
 import pandas as pd
-import os
-import re
 import argparse
-import json
+from utils import load_patient_data, save_to_tsv, is_valid_path
 
 
 def get_all_calls(patient_json, research_access_mutations_maf_template, dmp_mutations_file, exclude_genes, exclude_classifications):
@@ -12,19 +10,18 @@ def get_all_calls(patient_json, research_access_mutations_maf_template, dmp_muta
     """
     
     # Load in the patient JSON
-    patient_data = load_patient_data(patient_json)
-    combined_id = patient_data['combined_id']
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
 
     # Get the research and clinical calls from corresponding MAF files
-    research_calls = get_research_access_mutations(patient_data, research_access_mutations_maf_template)
-    clinical_calls = get_clinical_mutations(patient_data, dmp_mutations_file)
+    research_calls = get_research_access_mutations(cmo_id, patient_data, research_access_mutations_maf_template)
+    clinical_calls = get_clinical_mutations(dmp_id, dmp_mutations_file)
 
     # Merge and filter the calls based on the exclude gene and classification lists
     all_small_calls = merge_calls(research_calls, clinical_calls)
     all_small_calls_filtered = filter_calls(all_small_calls, exclude_genes, exclude_classifications)
 
     # Write the final filtered output to a maf file
-    write_to_maf(all_small_calls_filtered, combined_id)
+    save_to_tsv(all_small_calls_filtered, combined_id, "all_small_calls", "maf")
 
 def parse_mutation_file(mutations_file, assay_type, dmp_id):
     """
@@ -36,8 +33,7 @@ def parse_mutation_file(mutations_file, assay_type, dmp_id):
     mutations = []
     
     # return an empty list if the maf file doesn't exist
-    if not os.path.exists(mutations_file):
-        print(f"File does not exist: {mutations_file}")
+    if not is_valid_path(mutations_file):
         return mutations
     
     with open(mutations_file, 'r') as maf:
@@ -110,12 +106,10 @@ def filter_calls(calls_df, exclude_genes, exclude_classifications):
 
     return filtered_calls
     
-def get_research_access_mutations(patient_data, research_access_mutations_maf_template):
+def get_research_access_mutations(cmo_id, patient_data, research_access_mutations_maf_template):
     """
     Find every research samples in the patient_data, and parse the maf file for each sample. Collects all the calls into research_mutations list.
     """
-
-    cmo_id = patient_data['cmo_id']
     research_mutations = []
 
     if not cmo_id:
@@ -131,9 +125,8 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf_te
     return research_mutations
 
 
-def get_clinical_mutations(patient_data, dmp_mutations_file):
+def get_clinical_mutations(dmp_id, dmp_mutations_file):
     """ Get clinical mutations from the given dmp file. """
-    dmp_id = patient_data['dmp_id']
     clinical_mutations = []
 
     if not dmp_id:
@@ -154,16 +147,6 @@ def merge_calls(research_calls, clinical_calls):
     all_small_calls = all_small_calls.drop_duplicates(subset=['Hugo_Symbol', 'Chromosome', 'Start_Position', 'End_Position', 'Variant_Classification', 'Reference_Allele', 'Tumor_Seq_Allele2'], keep='first')
     
     return(all_small_calls)
-
-def write_to_maf(calls_df, patient_id):
-    """ Save call information to a tab delimited file """
-
-    calls_df.to_csv(f"{patient_id}_all_small_calls.maf", index=False, sep = "\t")
-    print(f'{patient_id}_all_small_calls.maf has been created.')
-
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        return json.load(json_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate all called mutations MAF.")

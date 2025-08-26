@@ -2,21 +2,19 @@ import glob
 from pathlib import Path
 import pandas as pd
 import argparse
-import json
 import os
-import re
+from utils import load_patient_data, save_to_tsv
 
 def get_facets_data(facets_dir, patient_json, best_fit):
 
-    patient_data = load_patient_data(patient_json)
-    dmp_id = patient_data["dmp_id"]
-    combined_id = patient_data["combined_id"]
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
 
     facets_cols = ["facets_impact_sample", "facets_fit", "facets_path"]
     best_facets_fits = pd.DataFrame(columns=facets_cols)
 
     if not dmp_id:
-        return write_to_txt(best_facets_fits, combined_id)
+        formatted_output = format_output(best_facets_fits, combined_id)
+        return save_to_tsv(formatted_output, combined_id, "facets_fit", "txt")
 
     all_facets_sample_dirs = []
     all_facets_sample_dirs = find_all_facets_sample_dirs(facets_dir, dmp_id)
@@ -34,7 +32,8 @@ def get_facets_data(facets_dir, patient_json, best_fit):
 
     best_facets_fits = pd.DataFrame(best_fits, columns=facets_cols)
 
-    write_to_txt(best_facets_fits, combined_id)
+    formatted_output = format_output(best_facets_fits, combined_id)
+    return save_to_tsv(formatted_output, combined_id, "facets_fit", "txt")
 
 def find_all_facets_sample_dirs(facets_dir, dmp_id):
     patient_path = Path(facets_dir) / dmp_id[:7]
@@ -94,20 +93,13 @@ def find_best_facets_fit_file(facets_dir, dmp_id):
 
     return facets_fits[0], fit_name
 
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        return patient_data
-
-def write_to_txt(facets_files, patient_id):
-    output_file = f"{patient_id}_facets_fit.txt"
+def format_output(facets_files, patient_id):
 
     if facets_files.empty:
         # Write header + MISSING row
         facets_files = pd.DataFrame([["MISSING", "MISSING", "MISSING"]], columns=["facets_impact_sample", "facets_fit", "facets_path"])
 
-    facets_files.to_csv(output_file, sep='\t', index=False)
-    return output_file
+    return facets_files
 
 def read_manifest(manifest_path):
     with open(manifest_path, "r") as f:
