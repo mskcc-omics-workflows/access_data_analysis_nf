@@ -1,5 +1,5 @@
 process GENOTYPE_VARIANTS {
-    tag "$patient_json"
+    tag "$patient_id"
     label 'genotype_variants'
 
     conda "${moduleDir}/environment.yml"
@@ -9,13 +9,13 @@ process GENOTYPE_VARIANTS {
         'ghcr.io/msk-access/genotype_variants:0.3.9' }"
 
     input:
-    tuple path(patient_json), val(genotyping_input)
+    tuple path(patient_json), val(patient_id), val(genotyping_input)
     val fasta_ref
 
-    publishDir "${params.outdir}/intermediary/genotyped_mafs", mode: 'copy', pattern: '*.maf'
+    publishDir "${params.outdir}/intermediary/small_variants/${patient_id}/genotyped_mafs", mode: 'copy', pattern: '*.maf'
 
     output:
-        tuple path(patient_json), path("*.maf"), emit: genotyped_mafs
+        tuple path(patient_json), val(patient_id), path("*.maf"), emit: genotyped_mafs
         stdout
 
     when:

@@ -23,7 +23,7 @@ def build_input_table(patient_json, templates, all_calls_maf):
     bam_paths = extract_bam_paths(patient_data, templates)
     
     bam_paths_df = pd.DataFrame(bam_paths)
-    #bam_paths_df['patient_id'] = combined_id
+    bam_paths_df['patient_id'] = combined_id
     bam_paths_df['maf'] = os.path.realpath(all_calls_maf)
 
     bam_paths_df = bam_paths_df.reindex(columns=required_cols, fill_value="NA")

@@ -1,5 +1,5 @@
 process FIND_FACETS_FIT {
-    tag "$patient_json"
+    tag "$patient_id"
     label 'process_single'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -8,12 +8,12 @@ process FIND_FACETS_FIT {
 
     input:
     val facets_dir
-    path patient_json
+    tuple path(patient_json), val(patient_id)
 
     publishDir "${params.outdir}/intermediary/facets_fit", mode: 'copy', pattern: '*facets_fit.txt'
 
     output:
-        tuple path(patient_json), path("*facets_fit.txt"), emit: facets_fit
+        tuple val(patient_id), path("*facets_fit.txt"), emit: facets_fit
 
     when:
     task.ext.when == null || task.ext.when
