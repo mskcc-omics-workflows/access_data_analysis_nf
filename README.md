@@ -17,71 +17,151 @@
 
 [![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23accessanalysis-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/accessanalysis)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Follow on Mastodon](https://img.shields.io/badge/mastodon-nf__core-6364ff?labelColor=FFFFFF&logo=mastodon)](https://mstdn.science/@nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
-## Introduction
+# ACCESS Data Analysis Pipeline
 
-**nf-core/accessanalysis** is a bioinformatics pipeline that ...
+## Overview
+Pipeline for analyzing variants from research and clinical ACCESS and IMPACT samples, and creating per-patient summaries of variants across the different samples.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
-
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+## Dependencies
+- Nextflow ≥ 24.04.2
+- Python ≥ 3.9
+- pandas
+- numpy
 
 ## Usage
 
-> [!NOTE]
-> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
-
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-```
-
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
-
-Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
-
 ```bash
-nextflow run nf-core/accessanalysis \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR>
+nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
+```
+- ***Note 1:** `juno` and `accessv1` are set as defaults and may be omitted.*
+- ***Note 2: [MODIFIED]** The nextflow.config excludes JUNO-specific file path parameters, which are contained in `conf/juno.config`.*
+
+## Input and Output parameters
+
+*Set these in the `nextflow.config` file or specify on the command line:*
+- **input** *(required)*: `/path/to/input/patient_id_mapping.csv`  
+  CSV file with columns: `cmo_patient_id`, `dmp_patient_id` of patients to include.
+- **include_samples_file** *(optional)*: File containing **CMO sample IDs** to include (no header).
+  - If provided, other CMO samples for the patients will be ignored.
+  - Use `null` to not restrict CMO samples to a list.
+- **exclude_samples_file** *(optional)*: File containing **CMO and DMP sample IDs** to exclude (no header).
+  - Exclusions override inclusions for CMO sample IDs.
+  - Use `null` to not exclude any samples.
+- **outdir** *(required)*: Output directory.
+
+## Pipeline Steps
+
+### 1. Research and Clinical ACCESS and IMPACT sample inference
+- Parses ACCESS research BAM directories and key files for ACCESS/IMPACT clinical samples.  
+- Uses include and exclude lists provided by user to keep or exclude samples. 
+- Sets combined patient ID as `{cmo_patient_id}_{dmp_patient_id}`
+  - [or `cmo_patient_id` or `dmp_patient_id` if other ID not present]
+- Output files: `{patient_id}.json`.
+
+**The subsequent steps are run separately for each patient `{patient_id}`.**
+-----------------------------
+### 2. Find FACETS fit
+- Selects optimal FACETS fit for each IMPACT sample (prioritizing reviewed/QC-passed).  
+- Falls back to default fit if needed.  
+- Outputs tab-separated mapping of samples to FACETS fits.  
+- Marks missing cases with `"MISSING"`.
+- Output file: `{patient_id}_facets_fit.txt`
+  
+### 3. SNV/INDEL analysis steps
+
+#### 3.1 Union MAF Generation
+- Collects variants from ACCESS & IMPACT samples.  
+- Produces unified MAF file with all variants.  
+- ***[NEW]*** Does not filter any variants at this point 
+- ***[NEW]*** Adds columns:  
+  - **Called_In**: Samples containing the variant (semicolon-separated).  
+  - **Clinical**: Marks variants from clinical samples as `"Signed Out"`
+- Output file: `{patient_id}_all_small_calls.maf`
+
+#### 3.2 Input generation for genotype variants
+- Builds genotyping input with inferred BAM paths:  
+  - Duplex & Simplex for ACCESS tumors.  
+  - Unfiltered for ACCESS normals.  
+  - Standard for IMPACT.
+- Uses union MAF from previous step
+- Output file: `{patient_id}_genotyping_input.tsv`
+    
+#### 3.3 Genotype Variants
+- Runs `genotype_variants small_variants multiple-samples`.  
+- Deduplication enabled.  
+- Requires `GetBaseCountsMultiSample`.
+- Output files: `{patient_id}/genotyped_mafs/*.maf`
+
+#### 3.4 Aggregate variant allele counts across samples
+- Produces per-sample allele counts + VAF for each variant.
+- If there are M variants and N samples, there will be MxN rows in this table.
+- ***[MODIFIED]*** Uses fragment counts for alt and total counts.
+  - *\* Note previous version did not use fragment counts for ACCESS normal or IMPACT samples*
+- Fragment counts are from the following BAM files:
+  - ACCESS tumors: SIMPLEX + DUPLEX
+  - ACCESS normals: UNFILTERED
+  - IMPACT: STANDARD
+- ***[NEW]*** Assigns call status per sample:
+  - "called": variant was called in that sample
+  - "low_coverage": total count is below coverage threshold (default - ACCESS: 100x, IMPACT: 50x)
+  - "genotyped": previous conditions not met and VAF > 0
+  - "": (empty) none of the above conditions met
+- Output file: `{patient_id}-SNV-INDEL.allele_counts.csv`
+      
+#### 3.5 Annotate with Hotspot and CH lists
+- Annotates against hotspot and clonal hematopoiesis lists.  
+- Adds **Hotspot** and **CH** columns ("yes" if matched, empty if not).
+- Output file: `{patient_id}-SNV-INDEL.allele_counts.hotspot_ch.csv`
+
+#### 3.6 Filter variants ***[MODIFIED]***
+- ***[NEW]*** Adds 'filter' column to variant table, marking variants for exclusion based on:
+  - Presence in excluded genes list ('excluded_gene')
+  - Matching excluded variant classifications ('excluded_classification')
+  - ***[NEW]*** Low coverage (low_coverage) in ALL (tumor and normal, research and clinical) ACCESS samples ('low_access_cov')
+  - Multiple filter reasons are combined with semicolons (e.g., "excluded_gene;low_access_cov")
+- Creates two output files:
+  1. ***[NEW]*** Full variant list with annotations. `{patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.csv`
+  2. Filtered PASS-only list. `{patient_id}.snv_indel.filtered.csv`
+
+#### 3.7 ***[MODIFIED]*** Adjusted VAF with IMPACT FACETS
+- Uses FACETS copy number to compute adjusted VAF for **clonal variants**.
+- ***[BUG]*** Assumes diploid normal. The adjustment will be incorrect for mutations on sex chromosomes in male patients. NEEDS TO BE FIXED.
+- ***[NEW]*** Creates two outputs (only contain variants that overlap with the FACETS CCF MAF):
+  1. Adjusted VAFs using all IMPACT samples. `{patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.adj_vaf_all_impact.csv`
+  2. Adjusted VAF from a single IMPACT sample selected for most variant overlap with ACCESS tumors.`{patient_id}.snv_indel.filtered.adj_vaf.csv`
+
+## Output Files
+
+Results are organized as:
+```
+{outdir}/
+├── intermediary/
+│   └──facets_fit/
+│           ├── {patient_id}_facets_fit.txt
+│   └──patient_JSONs/
+│           ├── {patient_id}_all_samples.json
+│   └── small_variants/
+│       └── {patient_id}/
+│           ├── {patient_id}_all_small_calls.maf
+│           ├── {patient_id}_genotyping_input.tsv
+│           ├── {patient_id}-SNV-INDEL.allele_counts.csv
+│           ├── {patient_id}-SNV-INDEL.allele_counts.hotspot_ch.csv
+│           ├── {patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.csv
+│           ├── {patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.adj_vaf_all_impact.csv
+│           └── genotyped_mafs/
+└── final/
+    └── {patient_id}/
+        └── {patient_id}.snv_indel.filtered.csv
+        └── {patient_id}.snv_indel.filtered.adj_vaf.csv
 ```
 
-> [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
-
-For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/accessanalysis/usage) and the [parameter documentation](https://nf-co.re/accessanalysis/parameters).
-
-## Pipeline output
-
-To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/accessanalysis/results) tab on the nf-core website pipeline page.
-For more details about the output files and reports, please refer to the
-[output documentation](https://nf-co.re/accessanalysis/output).
 
 ## Credits
+- **@shguturu** - Original author
+- **@kanika-arora** - Supervision and modifications
 
-nf-core/accessanalysis was originally written by @shguturu.
+We thank the following people for their extensive assistance in the development of this pipeline: **@buehlere**
 
-We thank the following people for their extensive assistance in the development of this pipeline:
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
