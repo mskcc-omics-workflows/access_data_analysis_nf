@@ -118,6 +118,8 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
   - Presence in excluded genes list ('excluded_gene')
   - Matching excluded variant classifications ('excluded_classification')
   - ***[NEW]*** Low coverage (low_coverage) in ALL (tumor and normal, research and clinical) ACCESS samples ('low_access_cov')
+  - ***[MODIFIED]*** For non-signed out variants if none of the ACCESS tumor samples meet minimum duplex alt threshold (default threshold: 3 for hotspot mutation, 5 for non-hotspot mutations) ('max_duplex_alt_count')
+  - ***[MODIFIED]*** For non-signed out variants if the ratio of max VAF of tumor samples to max VAF of normal samples if less than threshold (default: 2) ('low_tumor_to_normal_vaf_ratio')
   - Multiple filter reasons are combined with semicolons (e.g., "excluded_gene;low_access_cov")
 - Creates two output files:
   1. ***[NEW]*** Full variant list with annotations. `{patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.csv`
