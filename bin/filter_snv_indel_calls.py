@@ -68,8 +68,8 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
             max_duplex = max_duplex.rename(columns={"duplex_alt_count": "max_duplex_alt_count"})
             df = df.merge(max_duplex, on=variant_keys, how="left")
 
-            low_duplex_mask = ((df["Hotspot"].str.lower() == "yes") & (df["max_duplex_alt_count"] < hotspot_cutoff)) | \
-                              ((df["Hotspot"].str.lower() != "yes") & (df["max_duplex_alt_count"] < non_hotspot_cutoff))
+            low_duplex_mask = ((df["Hotspot"].astype(str).str.lower() == "yes") & (df["max_duplex_alt_count"] < hotspot_cutoff)) | \
+                              ((df["Hotspot"].astype(str).str.lower() != "yes") & (df["max_duplex_alt_count"] < non_hotspot_cutoff))
 
             df.loc[low_duplex_mask, 'filter'] = df.loc[low_duplex_mask].apply(
                 lambda x: 'low_duplex_alt_count' if x['filter'] == ''
@@ -78,39 +78,38 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
 
             df.drop(columns=["max_duplex_alt_count"], inplace=True)
 
-# --- Low tumor-to-normal VAF ratio filter ---
-required_vaf_cols = ["Clinical", "tumor_normal", "VAF"] + variant_keys
-if not set(required_vaf_cols).issubset(df.columns):
-    print(f"[WARNING] Missing one or more required columns for tumor-to-normal VAF ratio filtering: {required_vaf_cols}. Skipping")
-else:
-    subset = df[df["Clinical"] != "Signed Out"]
-    if not subset.empty:
-        vaf_group = subset.groupby(variant_keys).apply(
-            lambda g: pd.Series({
-                "max_tumor_vaf": g.loc[g["tumor_normal"] == "tumor", "VAF"].max(skipna=True),
-                "max_normal_vaf": g.loc[g["tumor_normal"] == "normal", "VAF"].max(skipna=True)
-            })
-        ).reset_index()
+    # --- Low tumor-to-normal VAF ratio filter ---
+    required_vaf_cols = ["Clinical", "tumor_normal", "vaf"] + variant_keys
+    if not set(required_vaf_cols).issubset(df.columns):
+        print(f"[WARNING] Missing one or more required columns for tumor-to-normal VAF ratio filtering: {required_vaf_cols}. Skipping")
+    else:
+        subset = df[df["Clinical"] != "Signed Out"]
+        if not subset.empty:
+            vaf_group = subset.groupby(variant_keys).apply(
+                lambda g: pd.Series({
+                    "max_tumor_vaf": g.loc[g["tumor_normal"] == "tumor", "vaf"].max(skipna=True),
+                    "max_normal_vaf": g.loc[g["tumor_normal"] == "normal", "vaf"].max(skipna=True)
+                })
+            ).reset_index()
 
-        vaf_group["vaf_ratio"] = vaf_group.apply(
-            lambda x: x["max_tumor_vaf"] / x["max_normal_vaf"] 
-                      if pd.notna(x["max_normal_vaf"]) and x["max_normal_vaf"] > 0 
-                      else float("inf"),
-            axis=1
-        )
+            vaf_group["vaf_ratio"] = vaf_group.apply(
+                lambda x: x["max_tumor_vaf"] / x["max_normal_vaf"] 
+                          if pd.notna(x["max_normal_vaf"]) and x["max_normal_vaf"] > 0 
+                          else float("inf"),
+                axis=1
+            )
 
-        df = df.merge(vaf_group[[*variant_keys, "vaf_ratio"]], on=variant_keys, how="left")
+            df = df.merge(vaf_group[[*variant_keys, "vaf_ratio"]], on=variant_keys, how="left")
 
-        low_ratio_mask = (df["Clinical"] != "Signed Out") & (df["vaf_ratio"] < vaf_ratio_threshold)
-        df.loc[low_ratio_mask, "filter"] = df.loc[low_ratio_mask].apply(
-            lambda x: "low_tumor_to_normal_vaf_ratio" if x["filter"] == ""
-            else f"{x['filter']};low_tumor_to_normal_vaf_ratio", axis=1
-        )
+            low_ratio_mask = (df["Clinical"] != "Signed Out") & (df["vaf_ratio"] < vaf_ratio_threshold)
+            df.loc[low_ratio_mask, "filter"] = df.loc[low_ratio_mask].apply(
+                lambda x: "low_tumor_to_normal_vaf_ratio" if x["filter"] == ""
+                else f"{x['filter']};low_tumor_to_normal_vaf_ratio", axis=1
+            )
 
-        df.drop(columns=["vaf_ratio"], inplace=True)
+            df.drop(columns=["vaf_ratio"], inplace=True)
 
     return df
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter SNV/Indel calls.")
