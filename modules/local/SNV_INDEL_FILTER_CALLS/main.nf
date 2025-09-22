@@ -87,6 +87,9 @@ process SNV_INDEL_ADD_FILTER_COL {
         tuple val(patient_id), path(snv_indel_csv)
         val exclude_genes
         val exclude_classifications
+        val hotspot_cutoff
+        val non_hotspot_cutoff
+        val vaf_ratio_threshold
 
     publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: "*filter.csv"
     publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: "*snv_indel.filtered.csv"
@@ -104,6 +107,9 @@ process SNV_INDEL_ADD_FILTER_COL {
         --variant_input ${snv_indel_csv} \\
         --exclude_genes ${exclude_genes} \\
         --exclude_classifications ${exclude_classifications} \\
+        --hotspot_cutoff ${hotspot_cutoff} \\
+        --non_hotspot_cutoff ${non_hotspot_cutoff} \\
+        --vaf_ratio_threshold ${vaf_ratio_threshold} \\
         --output ${basename}.filter.csv \\
         --output_final ${patient_id}.snv_indel.filtered.csv
     """
