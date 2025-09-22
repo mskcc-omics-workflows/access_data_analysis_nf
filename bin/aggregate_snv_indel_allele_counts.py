@@ -20,6 +20,8 @@ def select_maf_file_and_allele_cols(sample, genotyped_mafs):
     sample_id = sample["sample_id"]
     assay_type = sample["assay_type"]
     tumor_normal = sample["tumor_normal"]
+    duplex_alt_count_col=None
+    duplex_total_count_col=None
 
     # Determine suffix and bam_type
     if assay_type in ["research_access", "clinical_access"]:
@@ -28,6 +30,8 @@ def select_maf_file_and_allele_cols(sample, genotyped_mafs):
             bam_type = "simplex-duplex"
             alt_count_col = "t_alt_count_fragment_simplex_duplex"
             total_count_col = "t_total_count_fragment_simplex_duplex"
+            duplex_alt_count_col = "t_alt_count_fragment_duplex"
+            duplex_total_count_col = "t_total_count_fragment_duplex"
         else:
             suffix = "-STANDARD_genotyped.maf"
             bam_type = "unfiltered"
@@ -39,20 +43,26 @@ def select_maf_file_and_allele_cols(sample, genotyped_mafs):
         alt_count_col = "t_alt_count_fragment"
         total_count_col = "t_total_count_fragment"
     else:
-        return None, None, None, None
+        return None, None, None, None, None, None
 
     # Look for matching file in provided list
     for maf_file in genotyped_mafs:
         if maf_file.endswith(f"{sample_id}{suffix}"):
-            return maf_file, bam_type, alt_count_col, total_count_col
+            return maf_file, bam_type, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col
 
-    return None, None, None, None
+    return None, None, None, None, None, None
 
-def get_variant_counts(maf_df, alt_count_col, total_count_col):
+def get_variant_counts(maf_df, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col):
     df = maf_df.copy()
     df["alt_count"] = df[alt_count_col]
     df["total_count"] = df[total_count_col]
     df["vaf"] = df["alt_count"] / df["total_count"].replace(0, np.nan)
+    if duplex_alt_count_col != None and duplex_total_count_col != None:
+        df["duplex_alt_count"] = df[duplex_alt_count_col]
+        df["duplex_total_count"] = df[duplex_total_count_col]
+    else:
+        df["duplex_alt_count"] = np.nan
+        df["duplex_total_count"] = np.nan
     return df
 
     # Add call_status column
@@ -96,13 +106,13 @@ def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, outpu
     combined_list = []
 
     for sample_name, sample in patient_data["samples"].items():
-        maf_file, bam_type, alt_count_col, total_count_col = select_maf_file_and_allele_cols(sample, genotyped_mafs)
+        maf_file, bam_type, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col = select_maf_file_and_allele_cols(sample, genotyped_mafs)
         if not maf_file or not os.path.exists(maf_file):
             print(f"[WARN] MAF file not found for sample {sample_name}, skipping {maf_file}")
             continue
 
         maf_df = read_maf(maf_file)
-        maf_counts = get_variant_counts(maf_df, alt_count_col, total_count_col)
+        maf_counts = get_variant_counts(maf_df, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col)
 
         # Ensure consistent types
         maf_counts["Chromosome"] = maf_counts["Chromosome"].astype(str)
@@ -116,7 +126,8 @@ def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, outpu
 
         maf_cols=["sample_id", "tumor_normal", "assay", "source", "bam_type",
                 "Chromosome","Start_Position","End_Position","Reference_Allele",
-                "Tumor_Seq_Allele2","alt_count","total_count","vaf"]
+                "Tumor_Seq_Allele2","alt_count","total_count","vaf", 
+                "duplex_alt_count", "duplex_total_count"]
 
         # Merge union variants with sample counts
         merged = pd.merge(
@@ -136,6 +147,8 @@ def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, outpu
         combined_df["alt_count"] = np.nan
         combined_df["total_count"] = np.nan
         combined_df["vaf"] = np.nan
+        combined_df["duplex_alt_count"] = np.nan
+        combined_df["duplex_total_count"] = np.nan
 
     combined_df["patient_id"] = patient_id
 
