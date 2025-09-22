@@ -78,12 +78,14 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
 
             df.drop(columns=["max_duplex_alt_count"], inplace=True)
 
-    # --- Low tumor-to-normal VAF ratio filter ---
-    required_vaf_cols = ["tumor_normal", "VAF"] + variant_keys
-    if not set(required_vaf_cols).issubset(df.columns):
-        print(f"[WARNING] Missing one or more required columns for tumor-to-normal VAF ratio filtering: {required_vaf_cols}. Skipping")
-    else:
-        vaf_group = df.groupby(variant_keys).apply(
+# --- Low tumor-to-normal VAF ratio filter ---
+required_vaf_cols = ["Clinical", "tumor_normal", "VAF"] + variant_keys
+if not set(required_vaf_cols).issubset(df.columns):
+    print(f"[WARNING] Missing one or more required columns for tumor-to-normal VAF ratio filtering: {required_vaf_cols}. Skipping")
+else:
+    subset = df[df["Clinical"] != "Signed Out"]
+    if not subset.empty:
+        vaf_group = subset.groupby(variant_keys).apply(
             lambda g: pd.Series({
                 "max_tumor_vaf": g.loc[g["tumor_normal"] == "tumor", "VAF"].max(skipna=True),
                 "max_normal_vaf": g.loc[g["tumor_normal"] == "normal", "VAF"].max(skipna=True)
@@ -99,7 +101,7 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
 
         df = df.merge(vaf_group[[*variant_keys, "vaf_ratio"]], on=variant_keys, how="left")
 
-        low_ratio_mask = df["vaf_ratio"] < vaf_ratio_threshold
+        low_ratio_mask = (df["Clinical"] != "Signed Out") & (df["vaf_ratio"] < vaf_ratio_threshold)
         df.loc[low_ratio_mask, "filter"] = df.loc[low_ratio_mask].apply(
             lambda x: "low_tumor_to_normal_vaf_ratio" if x["filter"] == ""
             else f"{x['filter']};low_tumor_to_normal_vaf_ratio", axis=1
@@ -117,9 +119,9 @@ if __name__ == "__main__":
     parser.add_argument("--exclude_classifications", default="", help="Comma-separated list of variant classifications to exclude")
     parser.add_argument("--output", required=True, help="Path to save the variant CSV file with filter column added.")
     parser.add_argument("--output_final", required=True, help="Path to save the final variant CSV file which only keeps the PASS (filter='') variants.")
-    parser.add_argument("--hotspot_cutoff", type=int, default=3, help="Cutoff for max duplex_alt_count of hotspot variants")
-    parser.add_argument("--non_hotspot_cutoff", type=int, default=5, help="Cutoff for max duplex_alt_count of non-hotspot variants")
-    parser.add_argument("--vaf_ratio_threshold", type=float, default=2.0, help="Minimum ratio threshold for max VAF of tumor samples to max VAF of normal samples.")
+    parser.add_argument("--hotspot_cutoff", type=int, default=3, help="Cutoff for max duplex_alt_count of hotspot non-signed out variants")
+    parser.add_argument("--non_hotspot_cutoff", type=int, default=5, help="Cutoff for max duplex_alt_count of non-hotspot non-signed out variants")
+    parser.add_argument("--vaf_ratio_threshold", type=float, default=2.0, help="Minimum ratio threshold for max VAF of tumor samples to max VAF of normal samples for non-signed out variants.")
     args = parser.parse_args()
 
     exclude_genes = args.exclude_genes.split(",") if args.exclude_genes else []
