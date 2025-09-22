@@ -162,7 +162,10 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     SNV_INDEL_ADD_FILTER_COL(
         SNV_INDEL_ANNOTATE_HOTSPOT_CH.out.hotspot_ch_annotated_snv_indel, 
         params.variant_filter_rules.exclude_genes,
-        params.variant_filter_rules.exclude_classifications
+        params.variant_filter_rules.exclude_classifications,
+        params.variant_filter_rules.hotspot_cutoff,
+        params.variant_filter_rules.non_hotspot_cutoff,
+        params.variant_filter_rules.vaf_ratio_threshold
     )
     
     snv_indel_adj_vaf_input = SNV_INDEL_ADD_FILTER_COL.out.filtered_snv_indel
