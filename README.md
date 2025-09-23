@@ -95,8 +95,7 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
 #### 3.4 Aggregate variant allele counts across samples
 - Produces per-sample allele counts + VAF for each variant.
 - If there are M variants and N samples, there will be MxN rows in this table.
-- ***[MODIFIED]*** Uses fragment counts for alt and total counts.
-  - *\* Note previous version did not use fragment counts for ACCESS normal or IMPACT samples*
+- Uses fragment counts for alt and total counts for ACCESS tumor samples and raw counts for ACCESS normal and IMPACT samples.
 - Fragment counts are from the following BAM files:
   - ACCESS tumors: SIMPLEX + DUPLEX
   - ACCESS normals: UNFILTERED
