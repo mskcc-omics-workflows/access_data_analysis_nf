@@ -85,11 +85,12 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
     else:
         subset = df[df["Clinical"] != "Signed Out"]
         if not subset.empty:
-            vaf_group = subset.groupby(variant_keys).apply(
+            vaf_group = subset.groupby(variant_keys, group_keys=False).apply(
                 lambda g: pd.Series({
                     "max_tumor_vaf": g.loc[g["tumor_normal"] == "tumor", "vaf"].max(skipna=True),
                     "max_normal_vaf": g.loc[g["tumor_normal"] == "normal", "vaf"].max(skipna=True)
-                })
+                }),
+                include_groups=False
             ).reset_index()
 
             vaf_group["vaf_ratio"] = vaf_group.apply(
@@ -118,9 +119,9 @@ if __name__ == "__main__":
     parser.add_argument("--exclude_classifications", default="", help="Comma-separated list of variant classifications to exclude")
     parser.add_argument("--output", required=True, help="Path to save the variant CSV file with filter column added.")
     parser.add_argument("--output_final", required=True, help="Path to save the final variant CSV file which only keeps the PASS (filter='') variants.")
-    parser.add_argument("--hotspot_cutoff", type=int, default=3, help="Cutoff for max duplex_alt_count of hotspot non-signed out variants")
-    parser.add_argument("--non_hotspot_cutoff", type=int, default=5, help="Cutoff for max duplex_alt_count of non-hotspot non-signed out variants")
-    parser.add_argument("--vaf_ratio_threshold", type=float, default=2.0, help="Minimum ratio threshold for max VAF of tumor samples to max VAF of normal samples for non-signed out variants.")
+    parser.add_argument("--hotspot_cutoff", type=int, default=3, help="Cutoff for max duplex_alt_count of hotspot non-signed out variants (default: %(default)s).")
+    parser.add_argument("--non_hotspot_cutoff", type=int, default=5, help="Cutoff for max duplex_alt_count of non-hotspot non-signed out variants (default: %(default)s).")
+    parser.add_argument("--vaf_ratio_threshold", type=float, default=2.0, help="Minimum ratio threshold for max VAF of tumor samples to max VAF of normal samples for non-signed out variants (default: %(default)s).")
     args = parser.parse_args()
 
     exclude_genes = args.exclude_genes.split(",") if args.exclude_genes else []

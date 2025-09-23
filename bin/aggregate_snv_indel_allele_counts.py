@@ -28,6 +28,7 @@ def select_maf_file_and_allele_cols(sample, genotyped_mafs):
         if tumor_normal == "tumor":
             suffix = "-SIMPLEX-DUPLEX_genotyped.maf"
             bam_type = "simplex-duplex"
+            count_type = "fragment"
             alt_count_col = "t_alt_count_fragment_simplex_duplex"
             total_count_col = "t_total_count_fragment_simplex_duplex"
             duplex_alt_count_col = "t_alt_count_fragment_duplex"
@@ -35,22 +36,24 @@ def select_maf_file_and_allele_cols(sample, genotyped_mafs):
         else:
             suffix = "-STANDARD_genotyped.maf"
             bam_type = "unfiltered"
-            alt_count_col = "t_alt_count_fragment"
-            total_count_col = "t_total_count_fragment"
+            count_type = "raw"
+            alt_count_col = "t_alt_count" # "t_alt_count_fragment"
+            total_count_col = "t_total_count" # "t_total_count_fragment"
     elif assay_type == "clinical_impact":
         suffix = "-STANDARD_genotyped.maf"
         bam_type = "standard"
-        alt_count_col = "t_alt_count_fragment"
-        total_count_col = "t_total_count_fragment"
+        count_type = "raw"
+        alt_count_col = "t_alt_count" # "t_total_count_fragment"
+        total_count_col = "t_total_count" # "t_total_count_fragment"
     else:
-        return None, None, None, None, None, None
+        return None, None, None, None, None, None, None
 
     # Look for matching file in provided list
     for maf_file in genotyped_mafs:
         if maf_file.endswith(f"{sample_id}{suffix}"):
-            return maf_file, bam_type, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col
+            return maf_file, bam_type, count_type, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col
 
-    return None, None, None, None, None, None
+    return None, None, None, None, None, None, None
 
 def get_variant_counts(maf_df, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col):
     df = maf_df.copy()
@@ -106,7 +109,7 @@ def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, outpu
     combined_list = []
 
     for sample_name, sample in patient_data["samples"].items():
-        maf_file, bam_type, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col = select_maf_file_and_allele_cols(sample, genotyped_mafs)
+        maf_file, bam_type, count_type, alt_count_col, total_count_col, duplex_alt_count_col, duplex_total_count_col = select_maf_file_and_allele_cols(sample, genotyped_mafs)
         if not maf_file or not os.path.exists(maf_file):
             print(f"[WARN] MAF file not found for sample {sample_name}, skipping {maf_file}")
             continue
@@ -119,12 +122,13 @@ def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, outpu
         maf_counts["Start_Position"] = maf_counts["Start_Position"].astype(int)
         maf_counts["End_Position"] = maf_counts["End_Position"].astype(int)
         maf_counts["bam_type"] = bam_type
+        maf_counts["count_type"] = count_type
         maf_counts["tumor_normal"] = sample["tumor_normal"]
         maf_counts["assay"] = sample["assay_type"].split("_")[-1].upper()  # e.g., "access" or "impact"
         maf_counts["source"] = sample["assay_type"].split("_")[0]  # e.g., "clinical" or "research"
         maf_counts["sample_id"] = sample_name
 
-        maf_cols=["sample_id", "tumor_normal", "assay", "source", "bam_type",
+        maf_cols=["sample_id", "tumor_normal", "assay", "source", "bam_type", "count_type",
                 "Chromosome","Start_Position","End_Position","Reference_Allele",
                 "Tumor_Seq_Allele2","alt_count","total_count","vaf", 
                 "duplex_alt_count", "duplex_total_count"]
@@ -165,8 +169,8 @@ if __name__ == "__main__":
     parser.add_argument("--patient_json", required=True)
     parser.add_argument("--genotyped_mafs", nargs="+", required=True, help="List of all genotyped MAF files")
     parser.add_argument("--union_calls_maf", required=True)
-    parser.add_argument("--access_min_cov", type=int, default=100, help="Minimum coverage threshold for ACCESS samples")
-    parser.add_argument("--impact_min_cov", type=int, default=50, help="Minimum coverage threshold for IMPACT samples")
+    parser.add_argument("--access_min_cov", type=int, default=100, help="Minimum coverage threshold for ACCESS samples (default: %(default)s)")
+    parser.add_argument("--impact_min_cov", type=int, default=50, help="Minimum coverage threshold for IMPACT samples (default: %(default)s)")
     parser.add_argument("--output", required=True)
 
     args = parser.parse_args()
