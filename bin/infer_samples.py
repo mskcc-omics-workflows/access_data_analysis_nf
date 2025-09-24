@@ -12,10 +12,10 @@ Samples specified in the include and exclude files will be filtered as well.
 Output is one JSON file per patient, containing all samples relevant to the patient under a combined cmo/dmp id.
 """
 
-def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, include_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern):
+def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, keep_research_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern):
     """ Main logic function to get all samples from the id mapping file, split them by patient, get the relevant samples, and save to JSON. """
 
-    # Extract the cmo ids, dmp ids, and combined ids from the input file.
+    # Extract the cmo ids, dmp ids, sex, and combined ids from the input file.
     id_list = get_id_mapping(id_mapping_file)
 
     # Go through each patient one by one
@@ -24,6 +24,7 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
         combined_id = patient_data["combined_id"]
         cmo_id = patient_data["cmo_id"]
         dmp_id = patient_data["dmp_id"]
+        sex = patient_data["sex"]
         sample_dict = { combined_id: patient_data }
 
         # 1. Find research samples if patient has a cmo id
@@ -36,8 +37,8 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
             # named 'NO_INCLUDE_FILE' when no include file is actually provided. We need to detect this special
             # case and skip filtering when this placeholder is used. This is a temporary workaround that should
             # be replaced with a more elegant solution in future pipeline versions.
-            if include_samples_file: # and not os.path.basename(include_samples_file) == "NO_INCLUDE_FILE":
-                include_list = get_include_list(include_samples_file, cmo_id)
+            if keep_research_samples_file: # and not os.path.basename(keep_research_samples_file) == "NO_INCLUDE_FILE":
+                include_list = get_include_list(keep_research_samples_file, cmo_id)
                 research_samples = [s for s in research_samples if s in include_list]
             
             # Add research samples to sample dictionary
@@ -157,17 +158,18 @@ def get_id_mapping(id_mapping_file):
         for row in reader:
             cmo_id = row['cmo_patient_id'].strip() if 'cmo_patient_id' in row else ""
             dmp_id = row['dmp_patient_id'].strip() if 'dmp_patient_id' in row else ""
+            sex = row['sex'].strip() if 'sex' in row else ""
             combined_id = get_combined_patient_id(cmo_id, dmp_id)
             if cmo_id or dmp_id:
-                id_list.append({"combined_id": combined_id, "cmo_id": cmo_id, "dmp_id": dmp_id, "samples": {}})
+                id_list.append({"combined_id": combined_id, "cmo_id": cmo_id, "dmp_id": dmp_id, "sex": sex, "samples": {}})
 
     return id_list
 
-def get_include_list(include_samples_file, patient_id):
+def get_include_list(keep_research_samples_file, patient_id):
     """ Read in the include csv file and return samples to include that match the given patient id """
     include_list = []
     
-    with open(include_samples_file, newline='') as include:
+    with open(keep_research_samples_file, newline='') as include:
         reader = csv.reader(include)
         for row in reader:
             if not row or not row[0].strip():
@@ -214,7 +216,7 @@ def save_to_json(sample_dict, patient_id):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BAM paths.")
     parser.add_argument("--id_mapping_file", required=True)
-    parser.add_argument("--include_samples_file", required=False)
+    parser.add_argument("--keep_research_samples_file", required=False)
     parser.add_argument("--exclude_samples_file", required=False)
     parser.add_argument("--clinical_access_key_file", required=True)
     parser.add_argument("--clinical_impact_key_file", required=True)
@@ -224,5 +226,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     get_all_samples(args.id_mapping_file, args.research_access_bam_dir_template, args.clinical_access_key_file, 
-                   args.clinical_impact_key_file, args.include_samples_file, args.exclude_samples_file, 
+                   args.clinical_impact_key_file, args.keep_research_samples_file, args.exclude_samples_file, 
                    args.clinical_access_sample_regex_pattern, args.clinical_impact_sample_regex_pattern)

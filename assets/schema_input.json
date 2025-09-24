@@ -16,6 +16,11 @@
                 "type": "string",
                 "pattern": "^$|^P-[A-Z0-9]+$",
                 "errorMessage": "dmp_patient_id must be empty or follow the format 'P-XXXXXX'"
+            },
+            "sex": {
+                "type": "string",
+                "pattern": "^[MF]$",
+                "errorMessage": "sex must be M or F"
             }
         }
     }

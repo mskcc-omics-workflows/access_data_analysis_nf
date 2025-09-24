@@ -89,8 +89,7 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
                 lambda g: pd.Series({
                     "max_tumor_vaf": g.loc[g["tumor_normal"] == "tumor", "vaf"].max(skipna=True),
                     "max_normal_vaf": g.loc[g["tumor_normal"] == "normal", "vaf"].max(skipna=True)
-                }),
-                include_groups=False
+                })
             ).reset_index()
 
             vaf_group["vaf_ratio"] = vaf_group.apply(
@@ -112,13 +111,81 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
 
     return df
 
-if __name__ == "__main__":
+def create_pivot_table(pass_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a pivot table with one row per unique variant (defined by required + optional columns)
+    and one column per sample_id, containing alt_count/total_count(vaf).
+    
+    Parameters
+    ----------
+    pass_df : pd.DataFrame
+        DataFrame of PASS-filtered variants. Must include at least:
+        ["Chromosome", "Start_Position", "End_Position", "Reference_Allele", "Tumor_Seq_Allele2",
+         "sample_id", "alt_count", "total_count", "vaf"]
+
+    Returns
+    -------
+    pivot_df : pd.DataFrame
+        Pivoted table with one row per unique variant and one column per sample_id.
+    """
+    required_cols = ["Chromosome", "Start_Position", "End_Position", "Reference_Allele", "Tumor_Seq_Allele2"]
+    optional_cols = [
+        "Hugo_Symbol", "Variant_Classification", "HGVSp",
+        "HGVSp_Short", "HGVSc", "Clinical", "patient_id", "Hotspot", "CH"
+    ]
+
+    # Verify required columns exist
+    missing_required = [c for c in required_cols if c not in pass_df.columns]
+    if missing_required:
+        raise ValueError(f"Missing required columns for variant uniqueness: {missing_required}")
+
+    # Build final set of variant columns
+    variant_cols = required_cols + [c for c in optional_cols if c in pass_df.columns]
+    pass_df[variant_cols] = pass_df[variant_cols].fillna("")  # or ""
+
+    # Check per-sample columns exist
+    required_sample_cols = {"sample_id", "alt_count", "total_count", "vaf"}
+    missing_sample_cols = required_sample_cols - set(pass_df.columns)
+    if missing_sample_cols:
+        raise ValueError(f"Missing required sample columns for pivot table: {missing_sample_cols}")
+
+    # Build per-sample annotation string
+    df = pass_df.copy()
+    df["sample_annotation"] = df.apply(
+        lambda x: f"{x['alt_count']}/{x['total_count']}({x['vaf']:.4f})", axis=1
+    )
+    # Pivot table: one row per variant, one column per sample_id
+    pivot_df = df.pivot_table(
+        index=variant_cols,
+        columns="sample_id",
+        values="sample_annotation",
+        aggfunc=lambda x: ";".join(x)  # handle duplicates per variant+sample
+    ).reset_index()
+    print(pivot_df)
+    # Reorder columns: variant columns first, then sample columns (sorted)
+    pivot_df = pivot_df[
+        variant_cols + sorted([col for col in pivot_df.columns if col not in variant_cols])
+    ]
+
+    return pivot_df
+
+def main():
     parser = argparse.ArgumentParser(description="Filter SNV/Indel calls.")
     parser.add_argument("--variant_input", required=True, help="Path to variant input file.")
     parser.add_argument("--exclude_genes", default="", help="Comma-separated list of genes to exclude")
     parser.add_argument("--exclude_classifications", default="", help="Comma-separated list of variant classifications to exclude")
-    parser.add_argument("--output", required=True, help="Path to save the variant CSV file with filter column added.")
-    parser.add_argument("--output_final", required=True, help="Path to save the final variant CSV file which only keeps the PASS (filter='') variants.")
+    parser.add_argument("--output", required=True, help="Path to save all variants with their filter column (unfiltered output).")
+    parser.add_argument(
+        "--output_final",
+        required=True,
+        help="Path to save PASS-filtered variants as a flat CSV (one row per variant-sample pair)."
+    )
+    parser.add_argument(
+        "--output_final_table",
+        required=False,
+        help="Path to save PASS-filtered variants as a per-variant pivot table (one row per variant, one column per sample). "
+             "If not provided, defaults to <output_final_basename>.table.csv"
+    )
     parser.add_argument("--hotspot_cutoff", type=int, default=3, help="Cutoff for max duplex_alt_count of hotspot non-signed out variants (default: %(default)s).")
     parser.add_argument("--non_hotspot_cutoff", type=int, default=5, help="Cutoff for max duplex_alt_count of non-hotspot non-signed out variants (default: %(default)s).")
     parser.add_argument("--vaf_ratio_threshold", type=float, default=2.0, help="Minimum ratio threshold for max VAF of tumor samples to max VAF of normal samples for non-signed out variants (default: %(default)s).")
@@ -141,6 +208,7 @@ if __name__ == "__main__":
         filtered_df = filtered_df.sort_values(by=["Chromosome", "Start_Position"])
 
     filtered_df.to_csv(args.output, sep=",", index=False)
+    print(f"[INFO] All variants with filter column saved to {args.output}")
 
     if 'filter' not in filtered_df.columns:
         print("[WARN] No filter column found, assuming all variants pass filters")
@@ -148,6 +216,13 @@ if __name__ == "__main__":
 
     filtered_df = filtered_df[filtered_df["filter"].isin(["", "PASS"])]
     filtered_df.to_csv(args.output_final, sep=",", index=False)
-
-    print(f"[INFO] All variants with filter column saved to {args.output}")
     print(f"[INFO] Filtered variants saved to {args.output_final}")
+
+    # --- Create pivot table DataFrame and save ---
+    pivot_df = create_pivot_table(filtered_df)
+    table_path = args.output_final_table or args.output_final.replace(".csv", ".table.csv")
+    pivot_df.to_csv(table_path, sep=",", index=False)
+    print(f"[INFO] PASS-filtered pivot table saved to {table_path}")
+
+if __name__ == "__main__":
+    main()

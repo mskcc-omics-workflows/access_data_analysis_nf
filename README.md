@@ -40,9 +40,10 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
 
 *Set these in the `nextflow.config` file or specify on the command line:*
 - **input** *(required)*: `/path/to/input/patient_id_mapping.csv`  
-  CSV file with columns: `cmo_patient_id`, `dmp_patient_id` of patients to include.
-- **include_samples_file** *(optional)*: File containing **CMO sample IDs** to include (no header).
+  CSV file with columns: `cmo_patient_id`, `dmp_patient_id`, `sex` of patients to include.
+- **keep_research_samples_file** *(optional)*: File containing **CMO sample IDs** to include (no header).
   - If provided, other CMO samples for the patients will be ignored.
+  - Use this to provide the same sample list you would specify in the R pipeline masterfile.
   - Use `null` to not restrict CMO samples to a list.
 - **exclude_samples_file** *(optional)*: File containing **CMO and DMP sample IDs** to exclude (no header).
   - Exclusions override inclusions for CMO sample IDs.
@@ -120,16 +121,17 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
   - ***[MODIFIED]*** For non-signed out variants if none of the ACCESS tumor samples meet minimum duplex alt threshold (default threshold: 3 for hotspot mutation, 5 for non-hotspot mutations) ('max_duplex_alt_count')
   - ***[MODIFIED]*** For non-signed out variants if the ratio of max VAF of tumor samples to max VAF of normal samples if less than threshold (default: 2) ('low_tumor_to_normal_vaf_ratio')
   - Multiple filter reasons are combined with semicolons (e.g., "excluded_gene;low_access_cov")
-- Creates two output files:
+- Creates three output files:
   1. ***[NEW]*** Full variant list with annotations. `{patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.csv`
-  2. Filtered PASS-only list. `{patient_id}.snv_indel.filtered.csv`
+  2. Filtered PASS-only list. `{patient_id}.snv_indel.pass-filtered.csv`
+  3. A table format with one row per variant of the pass-filtered file. `{patient_id}.snv_indel.pass-filtered.table.csv`
 
 #### 3.7 ***[MODIFIED]*** Adjusted VAF with IMPACT FACETS
 - Uses FACETS copy number to compute adjusted VAF for **clonal variants**.
-- ***[BUG]*** Assumes diploid normal. The adjustment will be incorrect for mutations on sex chromosomes in male patients. NEEDS TO BE FIXED.
+- ***[FIXED]*** Assumes normal copy number = 2 in all patients, and for chromosome X in females, But normal copy number = 1 for chromosomes X and Y in males.
 - ***[NEW]*** Creates two outputs (only contain variants that overlap with the FACETS CCF MAF):
   1. Adjusted VAFs using all IMPACT samples. `{patient_id}-SNV-INDEL.allele_counts.hotspot_ch.filter.adj_vaf_all_impact.csv`
-  2. Adjusted VAF from a single IMPACT sample selected for most variant overlap with ACCESS tumors.`{patient_id}.snv_indel.filtered.adj_vaf.csv`
+  2. Adjusted VAF from a single IMPACT sample selected for most variant overlap with ACCESS tumors.`{patient_id}.snv_indel.pass-filtered.adj_vaf.csv`
 
 ## Output Files
 
@@ -152,8 +154,9 @@ Results are organized as:
 │           └── genotyped_mafs/
 └── final/
     └── {patient_id}/
-        └── {patient_id}.snv_indel.filtered.csv
-        └── {patient_id}.snv_indel.filtered.adj_vaf.csv
+        └── {patient_id}.snv_indel.pass-filtered.csv
+        └── {patient_id}.snv_indel.pass-filtered.table.csv
+        └── {patient_id}.snv_indel.pass-filtered.adj_vaf.csv
 ```
 
 

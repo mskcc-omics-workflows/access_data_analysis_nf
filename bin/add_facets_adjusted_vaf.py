@@ -43,7 +43,7 @@ def parse_facets_file(facets_impact_sample, facets_fit, facets_file, maf_cols):
 
     return facets_data_subset
 
-def calculate_adjusted_vaf(row): 
+def calculate_adjusted_vaf(row, sex): 
     """
     Calculate adjusted VAF based on clonality, total copy number (tcn),
     and expected alternate copies. Handles multiple possible VAF column names.
@@ -75,6 +75,8 @@ def calculate_adjusted_vaf(row):
             Tcn = float(row['tcn'])
             Talt = float(row['expected_alt_copies'])
             Ncn = 2  # Assuming diploid normal copy number
+            if (row['Chromosome'] in ["X", "Y"]) and sex == "M":
+                Ncn=1 # Change normal copy number to 1 if patient is male and mutation is on one of the sex chromosomes
             adj_vaf = (vaf * Ncn) / (Talt + (Ncn - Tcn) * vaf)
             return adj_vaf
         except (ValueError, TypeError, ZeroDivisionError):
@@ -82,7 +84,7 @@ def calculate_adjusted_vaf(row):
     else:
         return np.nan
 
-def merge_facets_info(variant_df, facets_df):
+def merge_facets_info(variant_df, facets_df, sex):
     """
     Add FACETs adjusted VAF information to variants that intersect with FACETS data.
     
@@ -134,12 +136,12 @@ def merge_facets_info(variant_df, facets_df):
 
     # Calculate adjusted VAF for matched variants
     if not merged_df.empty:
-        merged_df['adjusted_vaf'] = merged_df.apply(calculate_adjusted_vaf, axis=1)
+        merged_df['adjusted_vaf'] = merged_df.apply(calculate_adjusted_vaf, axis=1, sex=sex)
     
     return merged_df
 
 
-def merge_all_facets_samples(variant_csv, facets_file_list):
+def adj_vaf_using_all_impact_facets(variant_csv, facets_file_list, sex):
     """
     Process all FACETS sample fits for the patient and merge results into a single dataframe.
 
@@ -180,7 +182,7 @@ def merge_all_facets_samples(variant_csv, facets_file_list):
             continue
         
         # Merge with variants
-        result = merge_facets_info(variant_df, facets_df)
+        result = merge_facets_info(variant_df, facets_df, sex)
         if not result.empty:
             all_results.append(result)
     
@@ -194,7 +196,7 @@ def merge_all_facets_samples(variant_csv, facets_file_list):
             'facets_impact_sample', 'facets_fit', 'adjusted_vaf'
         ])
 
-def select_best_facets_impact(df):
+def select_best_impact_facets(df):
     """
     Select the facets_impact_sample with the most non-NA adjusted VAFs in ACCESS tumor samples.
     If there is a tie, randomly select one.
@@ -222,14 +224,15 @@ def select_best_facets_impact(df):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add FACETs adjusted VAF to SNV/Indel variant file.")
     parser.add_argument("--variant_csv", required=True, help="Path to the SNV/Indel variant CSV file.")
+    parser.add_argument("--sex", required=True, choices=["M", "F"], help="Patient's sex. Must be 'M' or 'F'.")
     parser.add_argument("--facets_file_list", required=True, help="Path to FACETs ccf.maf files list file.")
     parser.add_argument("--output_all_facets_samples", required=True, help="Path to save the output CSV with adjusted VAF calculations from all IMPACT samples with FACETS output.")
     parser.add_argument("--output_best_facets_sample", required=True, help="Path to save the output CSV file with FACETS adjusted VAF for IMPACT sample with most overlap with variants seen in ACCESS samples.")
     args = parser.parse_args()
 
-    final_variant_table=merge_all_facets_samples(args.variant_csv, args.facets_file_list)
+    final_variant_table=adj_vaf_using_all_impact_facets(args.variant_csv, args.facets_file_list, args.sex)
     final_variant_table.to_csv(args.output_all_facets_samples, sep=",", index=False)
 
-    best_variant_table = select_best_facets_impact(final_variant_table)
+    best_variant_table = select_best_impact_facets(final_variant_table)
     best_variant_table.to_csv(args.output_best_facets_sample, sep=",", index=False)
 
