@@ -92,10 +92,11 @@ process SNV_INDEL_ADD_FILTER_COL {
         val vaf_ratio_threshold
 
     publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: "*filter.csv"
-    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: "*snv_indel.filtered.csv"
+    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: "*snv_indel.pass-filtered*.csv"
     output:
         tuple val(patient_id), path("*filter.csv"), emit: filtered_snv_indel
-        tuple val(patient_id), path("*snv_indel.filtered.csv"), emit: final_filtered_snv_indel
+        tuple val(patient_id), path("*snv_indel.pass-filtered.csv"), emit: final_filtered_snv_indel
+        tuple val(patient_id), path("*snv_indel.pass-filtered.table.csv"), emit: final_filtered_snv_indel_table
 
     when:
         task.ext.when == null || task.ext.when
@@ -111,7 +112,8 @@ process SNV_INDEL_ADD_FILTER_COL {
         --non_hotspot_cutoff ${non_hotspot_cutoff} \\
         --vaf_ratio_threshold ${vaf_ratio_threshold} \\
         --output ${basename}.filter.csv \\
-        --output_final ${patient_id}.snv_indel.filtered.csv
+        --output_final ${patient_id}.snv_indel.pass-filtered.csv \\
+        --output_final_table ${patient_id}.snv_indel.pass-filtered.table.csv 
     """
 }
 
@@ -133,7 +135,7 @@ process SNV_INDEL_ADD_FACETS_ADJUSTED_VAF {
         tuple val(patient_id), val(sex), path(facets_fit), path(snv_indel_csv)
 
     publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: '*adj_vaf_all_impact.csv'
-    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: '*snv_indel.filtered.adj_vaf.csv'
+    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: '*.snv_indel.pass-filtered.adj_vaf.csv'
     output:
         tuple val(patient_id), path("*adj_vaf*.csv"), emit: adjusted_vaf_results
 
@@ -148,7 +150,7 @@ process SNV_INDEL_ADD_FACETS_ADJUSTED_VAF {
         --sex ${sex} \\
         --facets_file_list ${facets_fit} \\
         --output_all_facets_samples ${basename}.adj_vaf_all_impact.csv \\
-        --output_best_facets_sample ${patient_id}.snv_indel.filtered.adj_vaf.csv
+        --output_best_facets_sample ${patient_id}.snv_indel.pass-filtered.adj_vaf.csv
     """
 }
 

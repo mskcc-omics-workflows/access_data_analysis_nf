@@ -3,7 +3,7 @@ process INFER_SAMPLES {
 
     input:
     path id_mapping_file
-    path include_samples_file
+    path keep_research_samples_file
     path exclude_samples_file
     path clinical_access_key_file, name: "access_key.txt"
     path clinical_impact_key_file, name: "dmp_key.txt"
@@ -29,8 +29,8 @@ process INFER_SAMPLES {
         --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \\
         --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}'"
     
-    if [ -s "${include_samples_file}" ]; then
-        command="\$command --include_samples_file '${include_samples_file}'"
+    if [ -s "${keep_research_samples_file}" ]; then
+        command="\$command --keep_research_samples_file '${keep_research_samples_file}'"
     fi
     
     if [ -s "${exclude_samples_file}" ]; then

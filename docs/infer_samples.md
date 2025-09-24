@@ -8,7 +8,7 @@ The script processes CMO and DMP patient IDs from an input CSV file, finds assoc
 Three input files:
 - id_mapping_file
    - The input samples CSV file has two columns `cmo_patient_id` and `dmp_patient_id`. Even if you are only providing one type of id, both headers are required. The script can handle any combination of ids, it does not have to be standard for each sample.  
-- include_samples_file
+- keep_research_samples_file
    - Optional CSV file with a list of sample ids to include. No header is necessary. The file can be empty, but needs to exist for the pipeline.
 - exclude_samples_file
    - Optional CSV file with a list of sample ids to exclude. No header is necessary. The file can be empty, but needs to exist for the pipeline. 
