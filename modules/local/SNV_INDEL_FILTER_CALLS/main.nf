@@ -130,7 +130,7 @@ process SNV_INDEL_ADD_FACETS_ADJUSTED_VAF {
     tag "${patient_id}"
 
     input:
-        tuple val(patient_id), path(facets_fit), path(snv_indel_csv)
+        tuple val(patient_id), val(sex), path(facets_fit), path(snv_indel_csv)
 
     publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: '*adj_vaf_all_impact.csv'
     publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: '*snv_indel.filtered.adj_vaf.csv'
@@ -145,6 +145,7 @@ process SNV_INDEL_ADD_FACETS_ADJUSTED_VAF {
     """
     python3 ${workflow.projectDir}/bin/add_facets_adjusted_vaf.py \\
         --variant_csv ${snv_indel_csv} \\
+        --sex ${sex} \\
         --facets_file_list ${facets_fit} \\
         --output_all_facets_samples ${basename}.adj_vaf_all_impact.csv \\
         --output_best_facets_sample ${patient_id}.snv_indel.filtered.adj_vaf.csv

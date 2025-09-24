@@ -75,6 +75,13 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         tuple(file, patient_id)
     }
 
+    id_sex_mapping = patient_json.map { file ->
+        def json = new groovy.json.JsonSlurper().parseText(file.text)
+        def patient_id = json.combined_id
+        def sex        = json.sex
+    tuple(patient_id, sex)
+}
+
 //    CREATE_BIOMETRICS_INPUT(
 //        patient_meta,
 //        params.file_paths.research_access.bam_file_template.standard,
@@ -127,21 +134,6 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         patient_meta
     )
                             
-//    filter_calls_input = GENOTYPE_VARIANTS.out.genotyped_mafs.map { geno -> [ geno[0].getName(), geno ] }
-//                            .join(FIND_FACETS_FIT.out.facets_fit.map { facets -> [ facets[0].getName(), facets ] }, by: 0)
-//                            .map { id, geno, facets -> [geno[0], geno[1], facets[1]] }
-
-    // Create two copies of the channel for debugging and joining
-
-    // snv_indel_filter_calls_input = GENOTYPE_VARIANTS.out.genotyped_mafs
-    // .join(FIND_FACETS_FIT.out.facets_fit, by: 1)
-    // .map { patient_id, geno_json, geno_mafs, facets_json, facets_fit -> 
-    //     tuple(geno_json, patient_id, geno_mafs, facets_json, facets_fit)
-    // }
-    // .join(GENERATE_SNV_INDEL_UNION_MAF.out.maf_results, by: 1)
-    // .map { patient_id, geno_json, geno_mafs, facets_json, facets_fit, union_json, union_maf -> 
-    //     tuple(union_json, patient_id, geno_mafs, facets_fit, union_maf)
-    // }
 
     snv_indel_aggregate_input = GENOTYPE_VARIANTS.out.genotyped_mafs
     .join(GENERATE_SNV_INDEL_UNION_MAF.out.maf_results, by: 1)
@@ -168,19 +160,24 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         params.variant_filter_rules.vaf_ratio_threshold
     )
     
-    snv_indel_adj_vaf_input = SNV_INDEL_ADD_FILTER_COL.out.filtered_snv_indel
-    .join(FIND_FACETS_FIT.out.facets_fit, by: 0)
-    .map { patient_id, filtered_snv_indel, facets_fit -> 
-        tuple(patient_id, facets_fit, filtered_snv_indel)
+//    snv_indel_adj_vaf_input = SNV_INDEL_ADD_FILTER_COL.out.filtered_snv_indel
+//    .join(FIND_FACETS_FIT.out.facets_fit, by: 0)
+//    .map { patient_id, filtered_snv_indel, facets_fit -> 
+//        tuple(patient_id, facets_fit, filtered_snv_indel)
+//    }
+
+
+    snv_indel_adj_vaf_input = id_sex_mapping
+        .join(FIND_FACETS_FIT.out.facets_fit, by: 0)
+        .join(SNV_INDEL_ADD_FILTER_COL.out.filtered_snv_indel, by: 0)
+        .map { patient_id, sex, facets_fit, filtered_snv_indel ->
+            tuple(patient_id, sex, facets_fit, filtered_snv_indel)
     }
 
     SNV_INDEL_ADD_FACETS_ADJUSTED_VAF(
         snv_indel_adj_vaf_input
     )
 
-//    FILTER_CALLS(
-//        filter_calls_input
-//    )
 
 //    STRUCTURAL_VARIANTS(
 //        patient_json,
