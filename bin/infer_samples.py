@@ -15,7 +15,7 @@ Output is one JSON file per patient, containing all samples relevant to the pati
 def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, include_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern):
     """ Main logic function to get all samples from the id mapping file, split them by patient, get the relevant samples, and save to JSON. """
 
-    # Extract the cmo ids, dmp ids, and combined ids from the input file.
+    # Extract the cmo ids, dmp ids, sex, and combined ids from the input file.
     id_list = get_id_mapping(id_mapping_file)
 
     # Go through each patient one by one
@@ -24,6 +24,7 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
         combined_id = patient_data["combined_id"]
         cmo_id = patient_data["cmo_id"]
         dmp_id = patient_data["dmp_id"]
+        sex = patient_data["sex"]
         sample_dict = { combined_id: patient_data }
 
         # 1. Find research samples if patient has a cmo id
@@ -157,9 +158,10 @@ def get_id_mapping(id_mapping_file):
         for row in reader:
             cmo_id = row['cmo_patient_id'].strip() if 'cmo_patient_id' in row else ""
             dmp_id = row['dmp_patient_id'].strip() if 'dmp_patient_id' in row else ""
+            sex = row['sex'].strip() if 'sex' in row else ""
             combined_id = get_combined_patient_id(cmo_id, dmp_id)
             if cmo_id or dmp_id:
-                id_list.append({"combined_id": combined_id, "cmo_id": cmo_id, "dmp_id": dmp_id, "samples": {}})
+                id_list.append({"combined_id": combined_id, "cmo_id": cmo_id, "dmp_id": dmp_id, "sex": sex, "samples": {}})
 
     return id_list
 
