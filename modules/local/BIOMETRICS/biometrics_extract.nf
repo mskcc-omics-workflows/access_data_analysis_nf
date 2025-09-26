@@ -11,9 +11,9 @@ process BIOMETRICS_EXTRACT {
     path biometrics_vcf
 
     output:
-    tuple val(patient_id), path(biometrics_input), path("${patient_id}"), emit: biometrics_extract
+    tuple val(patient_id), path(biometrics_input), path("extract_db"), emit: biometrics_extract
 
-    publishDir "${params.outdir}/intermediary/biometrics/extract_db", mode: 'copy', pattern: "${patient_id}"
+    publishDir "${params.outdir}/intermediary/biometrics/${patient_id}", mode: 'copy', pattern: "extract_db"
 
     script:
     """
@@ -23,7 +23,7 @@ process BIOMETRICS_EXTRACT {
         -f ${fasta_ref} \
         --vcf ${biometrics_vcf} \
         --bed ${biometrics_bed} \
-        -db ${patient_id} \
+        -db 'extract_db' \
         -t ${task.cpus}
     """
 }

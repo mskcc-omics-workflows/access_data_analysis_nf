@@ -1,4 +1,4 @@
-process CREATE_BIOMETRICS_INPUT {
+process BIOMETRICS_CREATE_INPUT {
     tag "$patient_id"
     label 'process_single'
 
@@ -8,7 +8,7 @@ process CREATE_BIOMETRICS_INPUT {
     val clinical_access_standard_bam_template
     val clinical_impact_standard_bam_template
 
-    publishDir "${params.outdir}/intermediary/biometrics/input", mode: 'copy', pattern: '*biometrics_input.csv'
+    publishDir "${params.outdir}/intermediary/biometrics/${patient_id}", mode: 'copy', pattern: '*biometrics_input.csv'
 
     output:
         tuple val(patient_id), path ("*biometrics_input.csv"), emit: biometrics_input
@@ -18,7 +18,7 @@ process CREATE_BIOMETRICS_INPUT {
 
     script:
     """
-    python3 ../../../bin/create_biometrics_input_table.py \\
+    python3 ${workflow.projectDir}/bin/create_biometrics_input_table.py \\
         --patient_json $patient_json \\
         --research_access_standard_bam_template $research_access_standard_bam_template \\
         --clinical_access_standard_bam_template $clinical_access_standard_bam_template \\

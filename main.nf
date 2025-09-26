@@ -19,7 +19,7 @@ include { ACCESSANALYSIS  } from './workflows/accessanalysis'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { PIPELINE_COMPLETION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { getGenomeAttribute } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
-include { CREATE_BIOMETRICS_INPUT } from './modules/local/BIOMETRICS/create_biometrics_input'
+include { BIOMETRICS_CREATE_INPUT } from './modules/local/BIOMETRICS/biometrics_create_input'
 include { BIOMETRICS_EXTRACT } from './modules/local/BIOMETRICS/biometrics_extract'
 include { BIOMETRICS_GENOTYPE } from './modules/local/BIOMETRICS/biometrics_genotype'
 include { BIOMETRICS_SEXMISMATCH } from './modules/local/BIOMETRICS/biometrics_sexmismatch'
@@ -83,7 +83,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     tuple(patient_id, sex)
 }
 
-    CREATE_BIOMETRICS_INPUT(
+    BIOMETRICS_CREATE_INPUT(
         patient_meta,
         params.file_paths.research_access.bam_file_template.standard,
         params.file_paths.clinical_access.bam_file_template.standard,
@@ -91,7 +91,7 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     )
     
     BIOMETRICS_EXTRACT(
-        CREATE_BIOMETRICS_INPUT.out.biometrics_input,
+        BIOMETRICS_CREATE_INPUT.out.biometrics_input,
         params.fasta_ref,
         params.biometrics.bed,
         params.biometrics.vcf
