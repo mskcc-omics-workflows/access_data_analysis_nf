@@ -52,7 +52,7 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
 
 ## Pipeline Steps
 
-### 1. Research and Clinical ACCESS and IMPACT sample inference
+### 0. Research and Clinical ACCESS and IMPACT sample inference
 - Parses ACCESS research BAM directories and key files for ACCESS/IMPACT clinical samples.  
 - Uses include and exclude lists provided by user to keep or exclude samples. 
 - Sets combined patient ID as `{cmo_patient_id}_{dmp_patient_id}`
@@ -61,6 +61,15 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
 
 **The subsequent steps are run separately for each patient `{patient_id}`.**
 -----------------------------
+### 1. Biometrics
+- Runs steps from the python package [biometrics](https://cmo-ci.gitbook.io/biometrics/).
+- Create biometrics input file using the patient json and standard BAM path templates
+- ***Extraction*** to get pileup and coverage information from the BAM files
+- ***Genotype*** for finding sample matches and mismatches
+- ***Sex mismatch*** determination
+- Based on the genotype and sex mismatch output files to create a CSV ***summary*** file.
+  - genotype_qc_status is marked FAIL if there are any unexpected mismatches, and sex_mismatch_qc_status is marked FAIL if any of the samples has a sex mismatch.
+  
 ### 2. Find FACETS fit
 - Selects optimal FACETS fit for each IMPACT sample (prioritizing reviewed/QC-passed).  
 - Falls back to default fit if needed.  
@@ -138,11 +147,17 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
 Results are organized as:
 ```
 {outdir}/
-├── intermediary/
-│   └──facets_fit/
-│           ├── {patient_id}_facets_fit.txt
-│   └──patient_JSONs/
-│           ├── {patient_id}_all_samples.json
+└── intermediary/
+│   └── biometrics/
+│   │   └── {patient_id}/
+│   │       ├── {patient_id}.biometrics_input.csv
+│   │       ├── {patient_id}.genotype_comparison.csv
+│   │       ├── {patient_id}.sex_mismatch.csv
+│   │       └── extract_db/
+│   ├── facets_fit/
+│   │   └── {patient_id}_facets_fit.txt
+│   ├── patient_JSONs/
+│   │   └── {patient_id}_all_samples.json
 │   └── small_variants/
 │       └── {patient_id}/
 │           ├── {patient_id}_all_small_calls.maf
@@ -154,8 +169,9 @@ Results are organized as:
 │           └── genotyped_mafs/
 └── final/
     └── {patient_id}/
-        └── {patient_id}.snv_indel.pass-filtered.csv
-        └── {patient_id}.snv_indel.pass-filtered.table.csv
+        ├── {patient_id}.biometrics_summary.csv
+        ├── {patient_id}.snv_indel.pass-filtered.csv
+        ├── {patient_id}.snv_indel.pass-filtered.table.csv
         └── {patient_id}.snv_indel.pass-filtered.adj_vaf.csv
 ```
 
