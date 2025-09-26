@@ -22,11 +22,12 @@ include { getGenomeAttribute } from './subworkflows/local/utils_nfcore_accessana
 include { CREATE_BIOMETRICS_INPUT } from './modules/local/BIOMETRICS/create_biometrics_input'
 include { BIOMETRICS_EXTRACT } from './modules/local/BIOMETRICS/biometrics_extract'
 include { BIOMETRICS_GENOTYPE } from './modules/local/BIOMETRICS/biometrics_genotype'
+include { BIOMETRICS_SEXMISMATCH } from './modules/local/BIOMETRICS/biometrics_sexmismatch'
 include { BIOMETRICS_SUMMARY } from './modules/local/BIOMETRICS/biometrics_summary'
 include { INFER_SAMPLES } from './modules/local/INFER_SAMPLES/main'
-include { GENOTYPE_VARIANTS_INPUT         } from './modules/local/GENOTYPE_VARIANTS_INPUT/main'
-include { GENOTYPE_VARIANTS } from './modules/local/GENOTYPE_VARIANTS/main'
-include { GENERATE_SNV_INDEL_UNION_MAF } from './modules/local/GENERATE_SNV_INDEL_UNION_MAF/main'
+include { SNV_INDEL_CREATE_GENOTYPE_INPUT         } from './modules/local/SNV_INDEL_CREATE_GENOTYPE_INPUT/main'
+include { SNV_INDEL_GENOTYPE_VARIANTS } from './modules/local/SNV_INDEL_GENOTYPE_VARIANTS/main'
+include { SNV_INDEL_GENERATE_UNION_MAF } from './modules/local/SNV_INDEL_GENERATE_UNION_MAF/main'
 include { FIND_FACETS_FIT } from './modules/local/FIND_FACETS_FIT/main'
 include { SNV_INDEL_AGGREGATE_ALLELE_COUNTS } from './modules/local/SNV_INDEL_FILTER_CALLS/main'
 include { SNV_INDEL_ADD_FACETS_ADJUSTED_VAF } from './modules/local/SNV_INDEL_FILTER_CALLS/main'
@@ -82,33 +83,38 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     tuple(patient_id, sex)
 }
 
-//    CREATE_BIOMETRICS_INPUT(
-//        patient_meta,
-//        params.file_paths.research_access.bam_file_template.standard,
-//        params.file_paths.clinical_access.bam_file_template.standard,
-//        params.file_paths.clinical_impact.bam_file_template.standard
-//    )
+    CREATE_BIOMETRICS_INPUT(
+        patient_meta,
+        params.file_paths.research_access.bam_file_template.standard,
+        params.file_paths.clinical_access.bam_file_template.standard,
+        params.file_paths.clinical_impact.bam_file_template.standard
+    )
     
-//    BIOMETRICS_EXTRACT(
-//        CREATE_BIOMETRICS_INPUT.out.biometrics_input,
-//        params.fasta_ref,
-//        params.biometrics.bed,
-//        params.biometrics.vcf
-//    )
+    BIOMETRICS_EXTRACT(
+        CREATE_BIOMETRICS_INPUT.out.biometrics_input,
+        params.fasta_ref,
+        params.biometrics.bed,
+        params.biometrics.vcf
+    )
    
-//    BIOMETRICS_GENOTYPE(BIOMETRICS_EXTRACT.out.biometrics_extract)
+    BIOMETRICS_GENOTYPE(BIOMETRICS_EXTRACT.out.biometrics_extract)
 
-//    BIOMETRICS_SUMMARY(BIOMETRICS_GENOTYPE.out.biometrics_genotype)
+    BIOMETRICS_SEXMISMATCH(BIOMETRICS_EXTRACT.out.biometrics_extract)
 
-    GENERATE_SNV_INDEL_UNION_MAF(
+    BIOMETRICS_SUMMARY(
+        BIOMETRICS_GENOTYPE.out.biometrics_genotype
+        .join(BIOMETRICS_SEXMISMATCH.out.biometrics_sexmismatch, by:0)
+    )
+
+    SNV_INDEL_GENERATE_UNION_MAF(
         patient_meta,
         params.file_paths.research_access.variant_file_template.mutations,
         params.file_paths.clinical_impact.variant_file.mutations
     )
 
 
-    GENOTYPE_VARIANTS_INPUT(
-        GENERATE_SNV_INDEL_UNION_MAF.out.maf_results,
+    SNV_INDEL_CREATE_GENOTYPE_INPUT(
+        SNV_INDEL_GENERATE_UNION_MAF.out.maf_results,
 
         // Research ACCESS templates
         params.file_paths.research_access.bam_file_template.duplex,
@@ -124,8 +130,8 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
         params.file_paths.clinical_impact.bam_file_template.standard
     )
 
-    GENOTYPE_VARIANTS(
-        GENOTYPE_VARIANTS_INPUT.out.genotyping_input,
+    SNV_INDEL_GENOTYPE_VARIANTS(
+        SNV_INDEL_CREATE_GENOTYPE_INPUT.out.genotyping_input,
         params.fasta_ref
     )
 
@@ -135,8 +141,8 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     )
                             
 
-    snv_indel_aggregate_input = GENOTYPE_VARIANTS.out.genotyped_mafs
-    .join(GENERATE_SNV_INDEL_UNION_MAF.out.maf_results, by: 1)
+    snv_indel_aggregate_input = SNV_INDEL_GENOTYPE_VARIANTS.out.genotyped_mafs
+    .join(SNV_INDEL_GENERATE_UNION_MAF.out.maf_results, by: 1)
     .map { patient_id, geno_json, geno_mafs, union_json, union_maf -> 
         tuple(geno_json, patient_id, geno_mafs, union_maf)
     }

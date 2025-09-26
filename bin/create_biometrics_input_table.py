@@ -44,7 +44,7 @@ def extract_bam_paths(patient_data, templates):
         entry["sample_group"] = patient_data["combined_id"]
         assay = sample_data["assay_type"]
         entry["sample_type"] = sample_data["tumor_normal"].title()
-        entry["sample_sex"] = ""
+        entry["sample_sex"] = patient_data["sex"]
         # Research ACCESS: duplex bam and simplex bam from templates
         if assay == "research_access":
             entry["sample_bam"] = get_bams(sample_data, templates["research_access_standard_bam_template"])

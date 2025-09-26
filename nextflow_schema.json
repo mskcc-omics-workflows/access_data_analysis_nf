@@ -270,7 +270,18 @@
         },
         "fasta_ref": {
             "type": "string",
-            "default": "/juno/work/access/production/resources/reference/current/Homo_sapiens_assembly19.fasta"
+            "format":"file-path",
+            "exists": true,
+        },
+        "hotspot_list": {
+            "type": "string",
+            "format":"file-path",
+            "exists": true,
+        },
+        "ch_list": {
+            "type": "string",
+            "format":"file-path",
+            "exists": true,
         },
         "base_dirs": {
             "type": "object"
@@ -283,6 +294,10 @@
         },
         "variant_filter_rules": {
             "type": "object"
+        },
+        "donor_normal" : {
+            "type": "string",
+            "default": "DONOR22-TP"
         },
         "access_copy_number_gene_list": {
             "type": "string",

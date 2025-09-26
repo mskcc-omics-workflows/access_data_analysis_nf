@@ -1,4 +1,4 @@
-process GENERATE_SNV_INDEL_UNION_MAF {
+process SNV_INDEL_GENERATE_UNION_MAF {
     tag "$patient_id"
     label 'process_single'
 
