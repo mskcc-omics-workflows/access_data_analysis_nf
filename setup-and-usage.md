@@ -1,8 +1,21 @@
-# Parameters
+# Setup and Usage
 
-All parameters are set in `nextflow.config` file, and their schema specified in `nextflow_schema.json`.  Juno-specific paths specified in `conf/juno.config`.&#x20;
+## Dependencies
 
-TO DO: Create a config file for iris: `conf/iris.config`.&#x20;
+* Nextflow ≥ 24.04.2
+* Python ≥ 3.9
+* pandas
+* numpy
+
+## Example Command
+
+```
+nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
+```
+
+## Parameters
+
+All parameters are set in `nextflow.config` file, and their schema specified in `nextflow_schema.json`. &#x20;
 
 ## Input and Output parameters
 
@@ -18,4 +31,10 @@ TO DO: Create a config file for iris: `conf/iris.config`.&#x20;
   * Use `null` to not exclude any samples.
 * **outdir** (_required_): Output directory path.
 
-&#x20;
+## Profiles
+
+* **conda** (currently required) – Creates and uses conda environments for the different pipeline steps.
+* **juno** (currently default) – Uses file paths specific to juno/terra as defined in conf/juno.config.
+  * TODO: Add support for Iris by creating a configuration file conf/iris.config.
+* **accessv1** (currently default) – Uses DONOR22-TP in the small variants MAF file path.
+  * **accessv2** uses Donor19F21c2206-TP01 instead.
