@@ -7,10 +7,10 @@ process SNV_INDEL_GENERATE_UNION_MAF {
     val research_access_mutations_maf_template
     path dmp_mutations_file
 
-    publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: '*_all_small_calls.maf'
+    publishDir "${params.outdir}/intermediary/${patient_id}", mode: 'copy', pattern: '*snv_indel.union.maf'
 
     output:
-        tuple path(patient_json), val(patient_id), path("*_all_small_calls.maf"), emit: maf_results
+        tuple path(patient_json), val(patient_id), path("*snv_indel.union.maf"), emit: maf_results
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,7 +22,7 @@ process SNV_INDEL_GENERATE_UNION_MAF {
         --patient_json $patient_json \\
         --research_access_mutations_maf_template $research_access_mutations_maf_template \\
         --dmp_mutations_file $dmp_mutations_file \\
-
+        --output ${patient_id}.snv_indel.union.maf \\
     """
 
 }

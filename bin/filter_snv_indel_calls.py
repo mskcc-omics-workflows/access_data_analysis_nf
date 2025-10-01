@@ -109,6 +109,8 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
 
             df.drop(columns=["vaf_ratio"], inplace=True)
 
+    # change filter to PASS if it passes all the above conditions
+    df.loc[df['filter'] == "", 'filter'] = "PASS"
     return df
 
 def create_pivot_table(pass_df: pd.DataFrame) -> pd.DataFrame:
@@ -212,7 +214,7 @@ def main():
 
     if 'filter' not in filtered_df.columns:
         print("[WARN] No filter column found, assuming all variants pass filters")
-        filtered_df['filter'] = ""
+        filtered_df['filter'] = "PASS"
 
     filtered_df = filtered_df[filtered_df["filter"].isin(["", "PASS"])]
     filtered_df.to_csv(args.output_final, sep=",", index=False)

@@ -39,7 +39,8 @@ def get_all_calls(patient_json, research_access_mutations_maf_template, dmp_muta
 
     
     # Write the final filtered output file with Called_In column
-    write_to_maf(all_small_calls, mutation_to_samples, sample_assay_types, combined_id)
+    final=create_maf(all_small_calls, mutation_to_samples, sample_assay_types, combined_id)
+    return final
 
 def parse_mutation_file(mutations_file, assay_type, dmp_id=None):
     """
@@ -191,7 +192,7 @@ def is_clinical_mutation(mutation_key, mutation_to_samples, sample_assay_types):
             return True
     return False
 
-def write_to_maf(calls_df, mutation_to_samples, sample_assay_types, patient_id):
+def create_maf(calls_df, mutation_to_samples, sample_assay_types, patient_id):
     """ 
     Save call information to a tab delimited file with Clinical status and Called_In columns,
     preserving all original columns
@@ -216,11 +217,12 @@ def write_to_maf(calls_df, mutation_to_samples, sample_assay_types, patient_id):
         calls_df['Called_In'] = mutation_keys.apply(
             lambda key: ";".join(sorted(set(mutation_to_samples.get(key, []))))
         )
+    return calls_df
     
     # Write the output file with ALL columns (original + new)
-    output_file = f"{patient_id}_all_small_calls.maf"
-    calls_df.to_csv(output_file, index=False, sep="\t")
-    print(f'{output_file} has been created with all columns preserved.')
+##    output_file = args.output ## f"{patient_id}_all_small_calls.maf"
+##    calls_df.to_csv(output_file, index=False, sep="\t")
+##    print(f'{output_file} has been created with all columns preserved.')
 
 def load_patient_data(patient_json):
     try:
@@ -236,7 +238,11 @@ if __name__ == "__main__":
     parser.add_argument("--research_access_mutations_maf_template", required=True, 
                         help="Template path to research MAF files")
     parser.add_argument("--dmp_mutations_file", required=True, help="Path to clinical mutations file")
+    parser.add_argument("--output", required=True, help="Output file")
     args = parser.parse_args()
     
-    get_all_calls(args.patient_json, args.research_access_mutations_maf_template, 
+    df = get_all_calls(args.patient_json, args.research_access_mutations_maf_template, 
                  args.dmp_mutations_file)
+    output_file = args.output
+    df.to_csv(output_file, index=False, sep="\t")
+    print(f'{output_file} has been created with all columns preserved.')

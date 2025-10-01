@@ -16,7 +16,7 @@ process SNV_INDEL_CREATE_GENOTYPE_INPUT {
     val clinical_access_unfilter_bam_template
     val clinical_impact_standard_bam_template
 
-    publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: '*genotyping_input.tsv'
+//    publishDir "${params.outdir}/intermediary/small_variants/${patient_id}", mode: 'copy', pattern: '*genotyping_input.tsv'
 
     output:
         tuple path(patient_json), val(patient_id), path("*genotyping_input.tsv"), emit: genotyping_input
