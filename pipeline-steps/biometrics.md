@@ -14,7 +14,7 @@ Output files are organized as:
 
 ```
 {outdir}/
-└── intermediary/
+└── intermediate/
 │   └── biometrics/
 │   │   └── {patient_id}/
 │   │       ├── {patient_id}.biometrics_input.csv

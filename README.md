@@ -7,11 +7,9 @@ description: >-
 
 # Overview
 
-## Flowchart (proposed pipeline)
+## Flowchart (current)
 
-<figure><img src=".gitbook/assets/Flowchart (1).png" alt=""><figcaption></figcaption></figure>
-
-
+<figure><img src=".gitbook/assets/access_data_analysis_nf_current.png" alt=""><figcaption></figcaption></figure>
 
 
 

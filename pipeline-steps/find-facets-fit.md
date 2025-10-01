@@ -8,7 +8,7 @@
 
     ```
     {outdir}/
-    └── intermediary/
-        └── facets_fit/
+    └── intermediate/
+        └── {patient_id}/
            └── {patient_id}_facets_fit.txt
     ```

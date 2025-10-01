@@ -6,3 +6,6 @@
   * [Biometrics](pipeline-steps/biometrics.md)
   * [Find FACETS fit](pipeline-steps/find-facets-fit.md)
   * [SNV/INDEL analysis](pipeline-steps/snv-indel-analysis.md)
+  * [Copy Number analysis](pipeline-steps/copy-number-analysis.md)
+  * [Structural Variant analysis](pipeline-steps/structural-variant-analysis.md)
+  * [Microsatellite Instability analysis](pipeline-steps/microsatellite-instability-analysis.md)
