@@ -7,7 +7,7 @@ process SNV_INDEL_GENERATE_UNION_MAF {
     val research_access_mutations_maf_template
     path dmp_mutations_file
 
-    publishDir "${params.outdir}/intermediary/${patient_id}", mode: 'copy', pattern: '*snv_indel.union.maf'
+    publishDir "${params.outdir}/intermediate/${patient_id}", mode: 'copy', pattern: '*snv_indel.union.maf'
 
     output:
         tuple path(patient_json), val(patient_id), path("*snv_indel.union.maf"), emit: maf_results

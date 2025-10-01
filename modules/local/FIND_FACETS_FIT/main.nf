@@ -10,7 +10,7 @@ process FIND_FACETS_FIT {
     val facets_dir
     tuple path(patient_json), val(patient_id)
 
-    publishDir "${params.outdir}/intermediary/${patient_id}", mode: 'copy', pattern: '*facets_fit.txt'
+    publishDir "${params.outdir}/intermediate/${patient_id}", mode: 'copy', pattern: '*facets_fit.txt'
 
     output:
         tuple val(patient_id), path("*facets_fit.txt"), emit: facets_fit

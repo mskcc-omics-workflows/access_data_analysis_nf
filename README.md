@@ -147,7 +147,7 @@ nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
 Results are organized as:
 ```
 {outdir}/
-└── intermediary/
+└── intermediate/
 │   └── biometrics/
 │   │   └── {patient_id}/
 │   │       ├── {patient_id}.biometrics_input.csv

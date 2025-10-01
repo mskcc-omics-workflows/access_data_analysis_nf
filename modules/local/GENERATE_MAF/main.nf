@@ -12,7 +12,7 @@ process GENERATE_MAF {
     val exclude_genes
     val exclude_classifications
 
-    publishDir "${params.outdir}/intermediary/MAFs", mode: 'copy', pattern: '*_all_small_calls.maf'
+    publishDir "${params.outdir}/intermediate/MAFs", mode: 'copy', pattern: '*_all_small_calls.maf'
 
     output:
         tuple path(patient_json), path("*_all_small_calls.maf"), emit: maf_results

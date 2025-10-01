@@ -13,7 +13,7 @@ process BIOMETRICS_EXTRACT {
     output:
     tuple val(patient_id), path(biometrics_input), path("extract_db"), emit: biometrics_extract
 
-    publishDir "${params.outdir}/intermediary/biometrics/${patient_id}", mode: 'copy', pattern: "extract_db"
+    publishDir "${params.outdir}/intermediate/biometrics/${patient_id}", mode: 'copy', pattern: "extract_db"
 
     script:
     """

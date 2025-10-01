@@ -14,7 +14,7 @@ process COPY_NUMBER {
     val p_value_threshold
 
 
-    publishDir "${params.outdir}/intermediary/${patient_id}", mode: 'copy', pattern: "*cnv.csv"
+    publishDir "${params.outdir}/intermediate/${patient_id}", mode: 'copy', pattern: "*cnv.csv"
     publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: "*cnv.pass-filtered.csv"
 
     output:

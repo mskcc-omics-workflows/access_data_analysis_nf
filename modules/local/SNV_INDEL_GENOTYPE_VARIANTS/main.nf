@@ -12,7 +12,7 @@ process SNV_INDEL_GENOTYPE_VARIANTS {
     tuple path(patient_json), val(patient_id), val(genotyping_input)
     val fasta_ref
 
-//    publishDir "${params.outdir}/intermediary/small_variants/${patient_id}/genotyped_mafs", mode: 'copy', pattern: '*.maf'
+//    publishDir "${params.outdir}/intermediate/small_variants/${patient_id}/genotyped_mafs", mode: 'copy', pattern: '*.maf'
 
     output:
         tuple path(patient_json), val(patient_id), path("*.maf"), emit: genotyped_mafs

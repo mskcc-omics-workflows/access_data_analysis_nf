@@ -9,7 +9,7 @@ process BIOMETRICS_SEXMISMATCH {
     output:
     tuple val(patient_id), path("${patient_id}.sex_mismatch.csv"), emit: biometrics_sexmismatch
 
-    publishDir "${params.outdir}/intermediary/biometrics/${patient_id}", mode: 'copy', pattern: '*.sex_mismatch.csv'
+    publishDir "${params.outdir}/intermediate/biometrics/${patient_id}", mode: 'copy', pattern: '*.sex_mismatch.csv'
 
     script:
     """
