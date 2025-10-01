@@ -185,13 +185,12 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     )
 
 
-//    STRUCTURAL_VARIANTS(
-//        patient_json,
-//        params.file_paths.research_access.variant_file_template.sv,
-//        params.file_paths.clinical_access.variant_file.sv,
-//        params.file_paths.clinical_impact.variant_file.sv,
-//        params.access_structural_variant_gene_list
-//    )
+    STRUCTURAL_VARIANTS(
+        patient_meta,
+        params.file_paths.research_access.variant_file_template.sv,
+        params.file_paths.clinical_impact.variant_file.sv,
+        params.access_structural_variant_gene_list
+    )
 
 //    MSI(
 //        patient_json,

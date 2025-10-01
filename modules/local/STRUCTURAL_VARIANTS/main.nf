@@ -1,4 +1,5 @@
 process STRUCTURAL_VARIANTS {
+    tag "$patient_id"
     label 'process_single'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -6,16 +7,15 @@ process STRUCTURAL_VARIANTS {
         'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
 
     input:
-    path patient_json
+    tuple path(patient_json), val(patient_id)
     val research_access_sv_template
-    path clinical_access_sv_file, name: "clinical_access_data.txt"
-    path clinical_impact_sv_file, name: "clinical_impact_data.txt"
+    path clinical_impact_sv_file
     val access_structural_variant_gene_list
 
-    publishDir "${params.outdir}/final_results/structural_variants", mode: 'copy', pattern: "*SV.csv"
+    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: "*sv.csv"
 
     output:
-        tuple path(patient_json), path("*SV.csv"), emit: sv_results
+        tuple path(patient_json), path("*sv.csv"), emit: sv_results
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,12 +23,12 @@ process STRUCTURAL_VARIANTS {
     script:
 
     """
-    python3 ../../../bin/structural_variant_calls.py \\
+    python3 ${workflow.projectDir}/bin/structural_variant_analysis.py \\
         --patient_json $patient_json \\
         --research_access_sv_template $research_access_sv_template \\
-        --clinical_access_sv_file $clinical_access_sv_file \\
-        --clinical_impact_sv_file $clinical_impact_sv_file \\
+        --clinical_sv_file $clinical_impact_sv_file \\
         --access_structural_variant_gene_list $access_structural_variant_gene_list \\
+        --output ${patient_id}.sv.csv \\
     """
 
 }
