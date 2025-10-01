@@ -1,4 +1,5 @@
 process MSI {
+    tag "$patient_id"
     label 'process_single'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -6,15 +7,15 @@ process MSI {
         'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
 
     input:
-    path patient_json
+    tuple path(patient_json), val(patient_id)
     val reseach_access_msi_template
     path clinical_access_msi_file
     path clinical_impact_msi_file
 
-    publishDir "${params.outdir}/final_results/microsatellite_instability", mode: 'copy', pattern: '*_MSI.csv'
+    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: '*msi.csv'
 
     output:
-        tuple path(patient_json), path("*_MSI.csv"), emit: msi_results
+        tuple path(patient_json), path("*msi.csv"), emit: msi_results
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,11 +23,12 @@ process MSI {
     script:
 
     """
-    python3 ../../../bin/msi_scores.py \\
+    python3 ${workflow.projectDir}/bin/msi_analysis.py \\
         --patient_json $patient_json \\
         --reseach_access_msi_template $reseach_access_msi_template \\
         --clinical_access_msi_file $clinical_access_msi_file \\
         --clinical_impact_msi_file $clinical_impact_msi_file \\
+        --output ${patient_id}.msi.csv
     """
 
 }
