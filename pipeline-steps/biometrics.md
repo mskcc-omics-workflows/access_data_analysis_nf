@@ -16,11 +16,11 @@ Output files are organized as:
 {outdir}/
 └── intermediate/
 │   └── biometrics/
-│   │   └── {patient_id}/
-│   │       ├── {patient_id}.biometrics_input.csv
-│   │       ├── {patient_id}.genotype_comparison.csv
-│   │       ├── {patient_id}.sex_mismatch.csv
-│   │       └── extract_db/
+│      └── {patient_id}/
+│           ├── {patient_id}.biometrics_input.csv
+│           ├── {patient_id}.genotype_comparison.csv
+│           ├── {patient_id}.sex_mismatch.csv
+│           └── extract_db/
 └── final/
     └── {patient_id}/
         └── {patient_id}.biometrics_summary.csv
