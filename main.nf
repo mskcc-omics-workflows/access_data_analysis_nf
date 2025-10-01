@@ -200,13 +200,13 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 //        params.file_paths.clinical_impact.variant_file.msi
 //    )
 
-//    COPY_NUMBER (
-//        patient_json,
-//        params.file_paths.research_access.variant_file_template.cna,
-//        params.file_paths.clinical_impact.variant_file.cna,
-//        params.access_copy_number_gene_list,
-//        params.research_access_copy_number_p_value_filter
-//    )
+    COPY_NUMBER (
+        patient_meta,
+        params.file_paths.research_access.variant_file_template.cna,
+        params.file_paths.clinical_impact.variant_file.cna,
+        params.access_copy_number_gene_list,
+        params.copy_number_p_value_threshold
+    )
 
     //ACCESSANALYSIS (
     //    samplesheet

@@ -303,7 +303,7 @@
             "type": "string",
             "default": "AR,BRCA1,BRCA2,CDK4,EGFR,ERBB2,MET,MDM2,MLH1,MSH2,MSH6,MYC"
         },
-        "research_access_copy_number_p_value_filter": {
+        "copy_number_p_value_threshold": {
             "type": "number",
             "default": 0.05
         },

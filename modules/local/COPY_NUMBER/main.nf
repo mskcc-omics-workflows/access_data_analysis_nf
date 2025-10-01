@@ -6,16 +6,18 @@ process COPY_NUMBER {
         'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
 
     input:
-    path patient_json
+    tuple path(patient_json), val(patient_id)
     val research_access_cna_template
     path clinical_cna_file
     val access_copy_number_gene_list
-    val research_access_copy_number_p_value_filter
+    val p_value_threshold
 
-    publishDir "${params.outdir}/final_results/copy_number_variants", mode: 'copy', pattern: '*_CNA.csv'
+
+    publishDir "${params.outdir}/intermediary/${patient_id}", mode: 'copy', pattern: "*cnv.csv"
+    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: "*cnv.pass-filtered.csv"
 
     output:
-        tuple path(patient_json), path('*_CNA.csv'), emit: copy_number_results
+        tuple path(patient_json), path('*cnv*.csv'), emit: copy_number_results
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,12 +25,14 @@ process COPY_NUMBER {
     script:
 
     """
-    python3 ../../../bin/get_cna_calls.py \\
+    python3 ${workflow.projectDir}/bin/copy_number_variant_analysis.py \\
         --patient_json $patient_json \\
         --research_access_cna_template $research_access_cna_template \\
         --clinical_cna_file $clinical_cna_file \\
         --access_copy_number_gene_list $access_copy_number_gene_list \\
-        --research_access_copy_number_p_value_filter $research_access_copy_number_p_value_filter \\
+        --p_value_threshold $p_value_threshold \\
+        --output ${patient_id}.cnv.csv \\
+        --output_final ${patient_id}.cnv.pass-filtered.csv \\
     """
 
 }
