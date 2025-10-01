@@ -53,6 +53,7 @@
   * _**\[MODIFIED]**_ For non-signed out variants if none of the ACCESS tumor samples meet minimum duplex alt threshold (default threshold: 3 for hotspot mutation, 5 for non-hotspot mutations) ('max\_duplex\_alt\_count')
   * _**\[MODIFIED]**_ For non-signed out variants if the ratio of max VAF of tumor samples to max VAF of normal samples if less than threshold (default: 2) ('low\_tumor\_to\_normal\_vaf\_ratio')
   * Multiple filter reasons are combined with semicolons (e.g., "excluded\_gene;low\_access\_cov")
+  * Variants that pass all filters have "PASS" in the filter column.
 * Creates three output files:
   1. _**\[NEW]**_ Full variant list with annotations. `{patient_id}.snv_indel.allele_counts.hotspot_ch.filter.csv`
   2. Filtered PASS-only list. `{patient_id}.snv_indel.pass-filtered.csv`
