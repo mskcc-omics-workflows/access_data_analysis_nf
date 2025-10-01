@@ -19,22 +19,22 @@ All parameters are set in `nextflow.config` file, and their schema specified in 
 
 ## Input and Output parameters
 
-* **input** (_required_): CSV file with columns: `cmo_patient_id`, `dmp_patient_id`, `sex` of patients to include.
+* **`input`** (_required_): CSV file with columns: `cmo_patient_id`, `dmp_patient_id`, `sex` of patients to include.
   * At least one of cmo\_patient\_id or dmp\_patient\_id is required.
   * sex is required, and must be either F or M.
-* **keep\_research\_samples\_file** (_optional_): File containing _**CMO sample IDs**_ to include (no header, one sample id per row).
+* **`keep_research_samples_file`** (_optional_): File containing _**CMO sample IDs**_ to include (no header, one sample id per row).
   * If provided, CMO samples (both tumor and normal) not in the list will be ignored.
   * _Use this to provide the same sample list you would specify in the R pipeline masterfile._
   * Use `null` to not restrict CMO samples to a list.
-* **exclude\_samples\_file** (_optional_): File containing _**CMO sample IDs**_ and _**DMP sample IDs**_ to exclude (no header, one sample id per row).
+* **`exclude_samples_file`** (_optional_): File containing _**CMO sample IDs**_ and _**DMP sample IDs**_ to exclude (no header, one sample id per row).
   * Exclusions override inclusions for CMO sample IDs.
   * Use `null` to not exclude any samples.
-* **outdir** (_required_): Output directory path.
+* **`outdir`** (_required_): Output directory path.
 
 ## Profiles
 
-* **conda** (currently required) – Creates and uses conda environments for the different pipeline steps.
-* **juno** (currently default) – Uses file paths specific to juno/terra as defined in conf/juno.config.
+* **`conda`** (currently required) – Creates and uses conda environments for the different pipeline steps.
+* **`juno`** (currently default) – Uses file paths specific to juno/terra as defined in conf/juno.config.
   * TODO: Add support for Iris by creating a configuration file conf/iris.config.
-* **accessv1** (currently default) – Uses DONOR22-TP in the small variants MAF file path.
-  * **accessv2** uses Donor19F21c2206-TP01 instead.
+* **`accessv1`** (currently default) – Uses DONOR22-TP in the small variants MAF file path, and CNV gene list specific to ACCESS v1.
+  * **`accessv2`** uses Donor19F21c2206-TP01  in the small variants MAF file path, and CNV gene list specific to ACCESS v2.
