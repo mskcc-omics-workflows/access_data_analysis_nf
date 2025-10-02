@@ -10,7 +10,7 @@
 ## Example Command
 
 ```
-nextflow run main.nf -c nextflow.config -profile conda,juno,accessv1
+nextflow run main.nf -c nextflow.config -profile conda,juno_accessv1
 ```
 
 ## Parameters
@@ -34,7 +34,13 @@ All parameters are set in `nextflow.config` file, and their schema specified in 
 ## Profiles
 
 * **`conda`** (currently required) – Creates and uses conda environments for the different pipeline steps.
-* **`juno`** (currently default) – Uses file paths specific to juno/terra as defined in conf/juno.config.
-  * TODO: Add support for Iris by creating a configuration file conf/iris.config.
-* **`accessv1`** (currently default) – Uses DONOR22-TP in the small variants MAF file path, and CNV gene list specific to ACCESS v1.
-  * **`accessv2`** uses Donor19F21c2206-TP01  in the small variants MAF file path, and CNV gene list specific to ACCESS v2.
+* **`juno_accessv1`** (currently default)
+  * Uses file paths specific to terra as defined in conf/juno\_accessv1.config
+  * Uses DONOR22-TP in the small variants MAF file path
+  * Uses CNV gene list specific to ACCESS v1
+* **`juno_accessv2`**&#x20;
+  * Uses file paths specific to terra as defined in conf/juno\_accessv2.config
+  * Uses Donor19F21c2206-TP01  in the small variants MAF file path
+  * Uses CNV gene list specific to ACCESS v2.
+  * _\*Note: For biometrics, it uses the ACCESS v1 tiling SNPs file, as the larger number of tiling SNPs in ACCESS v2 significantly makes biometrics extraction step more computationally intensive and time-consuming._
+* TO DO: Create `iris_accessv1` and `iris_accessv2` config files and profiles.&#x20;
