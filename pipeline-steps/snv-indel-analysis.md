@@ -4,8 +4,8 @@
 
 * Collects variants from ACCESS & IMPACT samples.
 * Produces unified MAF file with all variants.
-* _**\[NEW]**_ Does not filter any variants at this point
-* _**\[NEW]**_ Adds columns:
+* Does not filter any variants at this point
+* Adds columns:
   * **Called\_In**: Samples containing the variant (semicolon-separated).
   * **Clinical**: Marks variants from clinical samples as `"Signed Out"`
 * _Output file: `{patient_id}.snv_indel.union.maf`_
