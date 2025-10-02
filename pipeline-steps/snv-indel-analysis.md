@@ -45,7 +45,7 @@
 * Annotates against hotspot and clonal hematopoiesis lists (specified in config file).
 * Adds **Hotspot** and **CH** columns ("yes" if matched, empty if not).
 
-## 6. **Filter variants&#x20;**_**\[MODIFIED]**_
+## 6. **Filter variants**
 
 * Adds 'filter' column to variant table, marking variants for exclusion based on:
   * `excluded_gene`: Presence in excluded genes list
