@@ -1,3 +1,10 @@
+> [!IMPORTANT]
+> ⚠️ The `main` branch is **not functional yet**.  
+> Please use the [`dev`](../../tree/dev) branch instead.
+---
+
+
+
 <h1>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-accessanalysis_logo_dark.png">
