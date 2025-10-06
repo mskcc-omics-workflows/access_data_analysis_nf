@@ -22,7 +22,7 @@ SV_TYPE_MAP = {
     "DELETION": "DEL",
     "INSERTION": "INS",
     "DUPLICATION": "DUP",
-    "TRANSLOCATION": "BND",
+    "TRANSLOCATION": "TRA",
     # Add more if needed
 }
 
@@ -62,19 +62,32 @@ def get_research_access_sv_calls(research_access_sv_template, patient_data, cmo_
                     research_access_sv_data = csv.DictReader(research_access_sv_file, delimiter='\t')
                     for row in research_access_sv_data:
                         if row['Gene1'] in access_structural_variant_gene_list or row['Gene2'] in access_structural_variant_gene_list:
+                            # Initialize gene1 and gene2 with original values
+                            gene1 = row["Gene1"]
+                            gene2 = row["Gene2"]
+                            
+                            # Check if Fusion column exists and parse it for gene names
+                            if "Fusion" in row and row["Fusion"].strip() != "":
+                                fusion_text = row["Fusion"].strip()
+                                # Look for pattern like "Protein Fusion: in frame {EML4:ALK}"
+                                fusion_match = re.search(r'\{([^:]+):([^}]+)\}', fusion_text)
+                                if fusion_match:
+                                    gene1 = fusion_match.group(1).strip()
+                                    gene2 = fusion_match.group(2).strip()
+                            
                             research_access_sv_calls.append({
                                 "sample_id": row["TumorId"],
                                 "sv_type": row["SV_Type"],
-                                "gene_1": row["Gene1"], 
-                                "gene_2": row["Gene2"],
-                                "chr_1": row["Chr1"],
-                                "pos_1": row["Pos1"],
-                                "chr_2": row["Chr2"], 
-                                "pos_2": row["Pos2"],
+                                "gene1": gene1, 
+                                "gene2": gene2,
+                                "chr1": row["Chr1"],
+                                "pos1": row["Pos1"],
+                                "chr2": row["Chr2"], 
+                                "pos2": row["Pos2"],
                                 "split_read_count": row["SplitReadSupport"], 
                                 "paired_read_count": row["PairEndReadSupport"], 
                                 "total_read_count": row["TumorReadCount"], 
-                                "info": "",
+                                "info": row["Fusion"],
                                 "source": source,
                                 "assay": assay
                             })
@@ -101,12 +114,12 @@ def get_clinical_sv_calls(clinical_sv_file, patient_data, access_structural_vari
                     clinical_sv_calls.append({
                         "sample_id": sample_id,
                         "sv_type": SV_TYPE_MAP.get(row.get("Class",""), row.get("Class","")),
-                        "gene_1": row.get("Site1_Hugo_Symbol", ""),
-                        "gene_2": row.get("Site2_Hugo_Symbol", ""),
-                        "chr_1": row.get("Site1_Chromosome", ""),
-                        "pos_1": row.get("Site1_Position", ""),
-                        "chr_2": row.get("Site2_Chromosome", ""), 
-                        "pos_2": row.get("Site2_Position", ""),
+                        "gene1": row.get("Site1_Hugo_Symbol", ""),
+                        "gene2": row.get("Site2_Hugo_Symbol", ""),
+                        "chr1": row.get("Site1_Chromosome", ""),
+                        "pos1": row.get("Site1_Position", ""),
+                        "chr2": row.get("Site2_Chromosome", ""), 
+                        "pos2": row.get("Site2_Position", ""),
                         "split_read_count": row.get("Tumor_Split_Read_Count", ""), 
                         "paired_read_count": row.get("Tumor_Paired_End_Read_Count", ""), 
                         "total_read_count": None, # always None, per your original
@@ -122,7 +135,7 @@ def get_clinical_sv_calls(clinical_sv_file, patient_data, access_structural_vari
 
 def generate_sv_table(patient_json, research_access_sv_template, clinical_sv_file, access_structural_variant_gene_list):
     patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
-    sv_columns = ["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "sv_type", "gene_1", "gene_2", "chr_1", "pos_1", "chr_2", "pos_2",
+    sv_columns = ["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "sv_type", "gene1", "gene2", "chr1", "pos1", "chr2", "pos2",
                   "split_read_count", "paired_read_count", "total_read_count", "info", "source", "assay"]
 
     # Collect calls
@@ -145,10 +158,10 @@ def generate_sv_table(patient_json, research_access_sv_template, clinical_sv_fil
 
     # ========== Added columns, derived BEFORE logic ==========
 
-    # variant = gene_1__gene_2:sv_type
+    # variant = gene1__gene2:sv_type
     for df in (research_access_sv_calls_df, clinical_sv_calls_df, all_sv_calls_df):
-        df["variant"] = df["gene_1"].astype(str).str.strip() + "__" + \
-                        df["gene_2"].astype(str).str.strip() + ":" + \
+        df["variant"] = df["gene1"].astype(str).str.strip() + "__" + \
+                        df["gene2"].astype(str).str.strip() + ":" + \
                         df["sv_type"].astype(str).str.strip()
 
     # vaf = (split_read_count + paired_read_count)/total_read_count if all are numbers
@@ -171,7 +184,7 @@ def generate_sv_table(patient_json, research_access_sv_template, clinical_sv_fil
     clinical_variants = set(clinical_sv_calls_df["variant"].dropna().str.strip().tolist())
 
     def is_blank_genes(row):
-        return str(row["gene_1"]).strip() == "" and str(row["gene_2"]).strip() == ""
+        return str(row["gene1"]).strip() == "" and str(row["gene2"]).strip() == ""
 
     def variant_signed_out(row):
         if is_blank_genes(row):
@@ -179,6 +192,38 @@ def generate_sv_table(patient_json, research_access_sv_template, clinical_sv_fil
         return "Signed Out" if str(row["variant"]).strip() in clinical_variants else None
 
     all_sv_calls_df["variant_clinical_status"] = all_sv_calls_df.apply(variant_signed_out, axis=1)
+  
+    # Create helper function for numerical chromosome sorting
+    def chr_sort_key(chr_str):
+        """Convert chromosome string to numerical value for proper sorting"""
+        chr_str = str(chr_str).upper().replace('CHR', '')
+        if chr_str == 'X':
+            return 23
+        elif chr_str == 'Y':
+            return 24
+        elif chr_str == 'MT' or chr_str == 'M':
+            return 25
+        else:
+            try:
+                return int(chr_str)
+            except ValueError:
+                return 26  # For any other non-standard chromosomes
+
+    # Create temporary sorting columns for numerical chromosome sorting
+    all_sv_calls_df['_chr_1_sort'] = all_sv_calls_df['chr1'].apply(chr_sort_key)
+    all_sv_calls_df['_chr_2_sort'] = all_sv_calls_df['chr2'].apply(chr_sort_key)
+    all_sv_calls_df['_pos_1_sort'] = pd.to_numeric(all_sv_calls_df['pos1'], errors='coerce')
+    all_sv_calls_df['_pos_2_sort'] = pd.to_numeric(all_sv_calls_df['pos2'], errors='coerce')
+
+    # Sort the DataFrame by numerical chromosomes, positions, and sample_id
+    all_sv_calls_df = all_sv_calls_df.sort_values(
+        by=['_chr_1_sort', '_pos_1_sort', '_chr_2_sort', '_pos_2_sort', 'sample_id'], 
+        ignore_index=True
+    )
+
+    # Drop the temporary sorting columns
+    all_sv_calls_df = all_sv_calls_df.drop(columns=['_chr_1_sort', '_chr_2_sort', '_pos_1_sort', '_pos_2_sort'])
+
 
     return all_sv_calls_df
 
