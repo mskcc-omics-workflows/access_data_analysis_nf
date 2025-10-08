@@ -3,12 +3,22 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_accessanalysis_pipeline'
+include { BIOMETRICS_CREATE_INPUT } from '../modules/local/BIOMETRICS/biometrics_create_input'
+include { BIOMETRICS_EXTRACT } from '../modules/local/BIOMETRICS/biometrics_extract'
+include { BIOMETRICS_GENOTYPE } from '../modules/local/BIOMETRICS/biometrics_genotype'
+include { BIOMETRICS_SEXMISMATCH } from '../modules/local/BIOMETRICS/biometrics_sexmismatch'
+include { BIOMETRICS_SUMMARY } from '../modules/local/BIOMETRICS/biometrics_summary'
+include { SNV_INDEL_CREATE_GENOTYPE_INPUT         } from '../modules/local/SNV_INDEL_CREATE_GENOTYPE_INPUT/main'
+include { SNV_INDEL_GENOTYPE_VARIANTS } from '../modules/local/SNV_INDEL_GENOTYPE_VARIANTS/main'
+include { SNV_INDEL_GENERATE_UNION_MAF } from '../modules/local/SNV_INDEL_GENERATE_UNION_MAF/main'
+include { FIND_FACETS_FIT } from '../modules/local/FIND_FACETS_FIT/main'
+include { SNV_INDEL_AGGREGATE_ALLELE_COUNTS } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
+include { SNV_INDEL_ADD_FACETS_ADJUSTED_VAF } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
+include { SNV_INDEL_ADD_FILTER_COL } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
+include { SNV_INDEL_ANNOTATE_HOTSPOT_CH } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
+include { COPY_NUMBER } from '../modules/local/COPY_NUMBER/main'
+include { STRUCTURAL_VARIANTS } from '../modules/local/STRUCTURAL_VARIANTS/main'
+include { MSI } from '../modules/local/MSI/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,75 +29,144 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_acce
 workflow ACCESSANALYSIS {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    patient_json
+
     main:
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
     //
-    // MODULE: Run FastQC
+    // WORKFLOW: Run pipeline
     //
-    FASTQC (
-        ch_samplesheet
+ 
+    patient_meta = patient_json.map { file ->
+        def json = new groovy.json.JsonSlurper().parseText(file.text)
+        def patient_id = json.combined_id
+        tuple(file, patient_id)
+    }
+
+    id_sex_mapping = patient_json.map { file ->
+        def json = new groovy.json.JsonSlurper().parseText(file.text)
+        def patient_id = json.combined_id
+        def sex        = json.sex
+    tuple(patient_id, sex)
+}
+
+    BIOMETRICS_CREATE_INPUT(
+        patient_meta,
+        params.file_paths.research_access.bam_file_template.standard,
+        params.file_paths.clinical_access.bam_file_template.standard,
+        params.file_paths.clinical_impact.bam_file_template.standard
     )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    
+    BIOMETRICS_EXTRACT(
+        BIOMETRICS_CREATE_INPUT.out.biometrics_input,
+        params.fasta_ref,
+        params.biometrics.bed,
+        params.biometrics.vcf
+    )
+   
+    BIOMETRICS_GENOTYPE(BIOMETRICS_EXTRACT.out.biometrics_extract)
 
-    //
-    // Collate and save software versions
-    //
-    softwareVersionsToYAML(ch_versions)
-        .collectFile(
-            storeDir: "${params.outdir}/pipeline_info",
-            name: 'nf_core_'  +  'accessanalysis_software_'  + 'mqc_'  + 'versions.yml',
-            sort: true,
-            newLine: true
-        ).set { ch_collated_versions }
+    BIOMETRICS_SEXMISMATCH(BIOMETRICS_EXTRACT.out.biometrics_extract)
 
-
-    //
-    // MODULE: MultiQC
-    //
-    ch_multiqc_config        = Channel.fromPath(
-        "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ?
-        Channel.fromPath(params.multiqc_config, checkIfExists: true) :
-        Channel.empty()
-    ch_multiqc_logo          = params.multiqc_logo ?
-        Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
-        Channel.empty()
-
-    summary_params      = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
-        file(params.multiqc_methods_description, checkIfExists: true) :
-        file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description                = Channel.value(
-        methodsDescriptionText(ch_multiqc_custom_methods_description))
-
-    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_methods_description.collectFile(
-            name: 'methods_description_mqc.yaml',
-            sort: true
-        )
+    BIOMETRICS_SUMMARY(
+        BIOMETRICS_GENOTYPE.out.biometrics_genotype
+        .join(BIOMETRICS_SEXMISMATCH.out.biometrics_sexmismatch, by:0)
     )
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
+    SNV_INDEL_GENERATE_UNION_MAF(
+        patient_meta,
+        params.file_paths.research_access.variant_file_template.mutations,
+        params.file_paths.clinical_impact.variant_file.mutations
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+    SNV_INDEL_CREATE_GENOTYPE_INPUT(
+        SNV_INDEL_GENERATE_UNION_MAF.out.maf_results,
 
+        // Research ACCESS templates
+        params.file_paths.research_access.bam_file_template.duplex,
+        params.file_paths.research_access.bam_file_template.simplex,
+        params.file_paths.research_access.bam_file_template.unfilter,
+
+        // Clinical ACCESS templates
+        params.file_paths.clinical_access.bam_file_template.duplex,
+        params.file_paths.clinical_access.bam_file_template.simplex,
+        params.file_paths.clinical_access.bam_file_template.unfilter,
+
+        // Clinical IMPACT templates
+        params.file_paths.clinical_impact.bam_file_template.standard
+    )
+
+    SNV_INDEL_GENOTYPE_VARIANTS(
+        SNV_INDEL_CREATE_GENOTYPE_INPUT.out.genotyping_input,
+        params.fasta_ref
+    )
+
+    FIND_FACETS_FIT(
+        params.base_dirs.clinical_impact.facets_dir,
+        patient_meta
+    )              
+
+    snv_indel_aggregate_input = SNV_INDEL_GENOTYPE_VARIANTS.out.genotyped_mafs
+    .join(SNV_INDEL_GENERATE_UNION_MAF.out.maf_results, by: 1)
+    .map { patient_id, geno_json, geno_mafs, union_json, union_maf -> 
+        tuple(geno_json, patient_id, geno_mafs, union_maf)
+    }
+    
+    SNV_INDEL_AGGREGATE_ALLELE_COUNTS(
+        snv_indel_aggregate_input,
+        params.variant_filter_rules.access_min_cov,
+        params.variant_filter_rules.impact_min_cov
+    )
+    SNV_INDEL_ANNOTATE_HOTSPOT_CH(
+        SNV_INDEL_AGGREGATE_ALLELE_COUNTS.out.snv_indel_results,
+        params.hotspot_list,
+        params.ch_list
+    )
+    SNV_INDEL_ADD_FILTER_COL(
+        SNV_INDEL_ANNOTATE_HOTSPOT_CH.out.hotspot_ch_annotated_snv_indel, 
+        params.variant_filter_rules.exclude_genes,
+        params.variant_filter_rules.exclude_classifications,
+        params.variant_filter_rules.hotspot_cutoff,
+        params.variant_filter_rules.non_hotspot_cutoff,
+        params.variant_filter_rules.vaf_ratio_threshold
+    )
+
+    snv_indel_adj_vaf_input = id_sex_mapping
+        .join(FIND_FACETS_FIT.out.facets_fit, by: 0)
+        .join(SNV_INDEL_ADD_FILTER_COL.out.filtered_snv_indel, by: 0)
+        .map { patient_id, sex, facets_fit, filtered_snv_indel ->
+            tuple(patient_id, sex, facets_fit, filtered_snv_indel)
+    }
+
+    SNV_INDEL_ADD_FACETS_ADJUSTED_VAF(
+        snv_indel_adj_vaf_input
+    )
+
+
+    STRUCTURAL_VARIANTS(
+        patient_meta,
+        params.file_paths.research_access.variant_file_template.sv,
+        params.file_paths.clinical_impact.variant_file.sv,
+        params.access_structural_variant_gene_list
+    )
+
+    MSI(
+        patient_meta,
+        params.file_paths.research_access.variant_file_template.msi,
+        params.file_paths.clinical_access.variant_file.msi,
+        params.file_paths.clinical_impact.variant_file.msi
+    )
+
+    COPY_NUMBER (
+        patient_meta,
+        params.file_paths.research_access.variant_file_template.cna,
+        params.file_paths.clinical_impact.variant_file.cna,
+        params.access_copy_number_gene_list,
+        params.copy_number_p_value_threshold
+    )
+
+    emit:
+    multiqc_report = null // channel: /path/to/multiqc_report.html
 }
 
 /*
