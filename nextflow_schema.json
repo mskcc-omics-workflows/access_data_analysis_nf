@@ -59,7 +59,7 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
                 },
-                "fasta": {
+                "fasta_ref": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
@@ -284,17 +284,330 @@
             "exists": true,
         },
         "base_dirs": {
-            "type": "object"
+            "type": "object",
+            "description": "Base directory paths for various access modes",
+            "properties": {
+                "research_access": {
+                "type": "object",
+                "properties": {
+                    "data_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "pattern": "^/.*",
+                    "description": "Top-level data directory for research access"
+                    },
+                    "bam_dir_template": {
+                    "type": "string",
+                    "pattern": "^/.*\\{cmo_patient_id\\}.*\\{sample_id\\}.*",
+                    "description": "Template for research BAM paths, must contain {cmo_patient_id} and {sample_id}"
+                    }
+                },
+                "required": ["data_dir", "bam_dir_template"]
+                },
+                "clinical_access": {
+                "type": "object",
+                "properties": {
+                    "bam_dir_template": {
+                    "type": "string",
+                    "pattern": "^/.*\\{anon_id_fl\\}.*\\{anon_id_sl\\}.*",
+                    "description": "Template for clinical access BAMs"
+                    },
+                    "variant_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "pattern": "^/.*",
+                    "description": "Variant directory for clinical access"
+                    }
+                },
+                "required": ["bam_dir_template", "variant_dir"]
+                },
+                "clinical_impact": {
+                "type": "object",
+                "properties": {
+                    "bam_dir_template": {
+                    "type": "string",
+                    "pattern": "^/.*\\{anon_id_fl\\}.*\\{anon_id_sl\\}.*",
+                    "description": "Template for clinical impact BAMs"
+                    },
+                    "variant_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Variant directory for clinical impact"
+                    },
+                    "facets_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "FACETS directory for clinical impact"
+                    }
+                },
+                "required": ["bam_dir_template", "variant_dir", "facets_dir"]
+                }
+            },
+            "required": ["research_access", "clinical_access", "clinical_impact"]
         },
-        "biometrics" : {
-             "type" : "object"
+        "biometrics": {
+            "type": "object",
+            "description": "Paths to biometrics resources used for ACCESS processing",
+            "properties": {
+                "bed": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^/.*\\.bed$",
+                "description": "BED file containing regions of interest for biometrics",
+                "errorMessage": "biometrics.bed must be an absolute path to an existing .bed file"
+                },
+                "vcf": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^/.*\\.vcf$",
+                "description": "VCF file containing tiling and fingerprint SNPs for biometrics",
+                "errorMessage": "biometrics.vcf must be an absolute path to an existing .vcf file"
+                }
+            },
+            "required": ["bed", "vcf"]
         },
         "file_paths": {
-            "type": "object"
+            "type": "object",
+            "description": "File path templates and resources for each access mode",
+            "properties": {
+                "research_access": {
+                "type": "object",
+                "description": "Templates and data locations for research access",
+                "properties": {
+                    "bam_file_template": {
+                    "type": "object",
+                    "properties": {
+                        "simplex": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*simplex\\.bam$",
+                        "description": "Path template for research simplex BAMs"
+                        },
+                        "duplex": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*duplex\\.bam$",
+                        "description": "Path template for research duplex BAMs"
+                        },
+                        "unfilter": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*\\.bam$",
+                        "description": "Path template for research unfiltered BAMs"
+                        },
+                        "standard": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*\\.bam$",
+                        "description": "Path template for standard research BAMs"
+                        }
+                    },
+                    "required": ["simplex", "duplex", "unfilter", "standard"]
+                    },
+                    "variant_file_template": {
+                    "type": "object",
+                    "properties": {
+                        "mutations": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*\\.maf$",
+                        "description": "Template path for MAF mutation files"
+                        },
+                        "cna": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*copynumber.*\\.txt$",
+                        "description": "Template path for copy number variant files"
+                        },
+                        "sv": {
+                        "type": "string",
+                        "pattern": "\\{sample_id\\}.*SV.*\\.txt$",
+                        "description": "Template path for structural variant files"
+                        },
+                        "msi": {
+                        "type": "string",
+                        "pattern": "msi_results\\.txt$",
+                        "description": "Template path for MSI result files"
+                        }
+                    },
+                    "required": ["mutations", "cna", "sv", "msi"]
+                    }
+                },
+                "required": ["bam_file_template", "variant_file_template"]
+                },
+
+                "clinical_access": {
+                "type": "object",
+                "description": "Templates and resources for clinical access",
+                "properties": {
+                    "key_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^/.*key\\.txt$",
+                    "description": "Key file for clinical access requests"
+                    },
+                    "bam_file_template": {
+                    "type": "object",
+                    "properties": {
+                        "simplex": {
+                        "type": "string",
+                        "pattern": "\\{anon_id\\}.*simplex\\.bam$"
+                        },
+                        "duplex": {
+                        "type": "string",
+                        "pattern": "\\{anon_id\\}.*duplex\\.bam$"
+                        },
+                        "unfilter": {
+                        "type": "string",
+                        "pattern": "\\{anon_id\\}.*unfilter\\.bam$"
+                        },
+                        "standard": {
+                        "type": "string",
+                        "pattern": "\\{anon_id\\}.*standard\\.bam$"
+                        }
+                    },
+                    "required": ["simplex", "duplex", "unfilter", "standard"]
+                    },
+                    "variant_file": {
+                    "type": "object",
+                    "properties": {
+                        "mutations": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_mutations_extended\\.txt$"
+                        },
+                        "cna": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_CNA\\.txt$"
+                        },
+                        "sv": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_sv\\.txt$"
+                        },
+                        "msi": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "\\.csv$",
+                        "description": "MSI results CSV file for clinical access"
+                        }
+                    },
+                    "required": ["mutations", "cna", "sv", "msi"]
+                    }
+                },
+                "required": ["key_file", "bam_file_template", "variant_file"]
+                },
+
+                "clinical_impact": {
+                "type": "object",
+                "description": "Templates and resources for clinical impact",
+                "properties": {
+                    "key_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^/.*key\\.txt$"
+                    },
+                    "bam_file_template": {
+                    "type": "object",
+                    "properties": {
+                        "standard": {
+                        "type": "string",
+                        "pattern": "\\{anon_id\\}.*\\.bam$"
+                        }
+                    },
+                    "required": ["standard"]
+                    },
+                    "variant_file": {
+                    "type": "object",
+                    "properties": {
+                        "mutations": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_mutations_extended\\.txt$"
+                        },
+                        "cna": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_CNA\\.txt$"
+                        },
+                        "sv": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_sv\\.txt$"
+                        },
+                        "msi": {
+                        "type": "string",
+                        "format": "file-path",
+                        "exists": true,
+                        "pattern": "data_clinical_sample\\.txt$"
+                        }
+                    },
+                    "required": ["mutations", "cna", "sv", "msi"]
+                    }
+                },
+                "required": ["key_file", "bam_file_template", "variant_file"]
+                }
+            },
+            "required": ["research_access", "clinical_access", "clinical_impact"]
         },
         "variant_filter_rules": {
-            "type": "object"
-        },
+            "type": "object",
+            "description": "Rules to filter variants during ACCESS analysis",
+            "properties": {
+                "exclude_genes": {
+                "type": "string",
+                "description": "Gene prefix or pattern to exclude from analysis"
+                },
+                "exclude_classifications": {
+                "type": "string",
+                "description": "Variant classifications to exclude (comma-separated)"
+                },
+                "access_min_cov": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Minimum coverage required in ACCESS data"
+                },
+                "impact_min_cov": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Minimum coverage required in clinical impact data"
+                },
+                "hotspot_cutoff": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Minimum duplex reads required in at least one tumor sample for hotspot SNVs/Indels calls"
+                },
+                "non_hotspot_cutoff": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Minimum duplex reads required in at least one tumor sample for non-hotspot SNVs/Indels calls"
+                },
+                "vaf_ratio_threshold": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Minimum ratio threshold for max VAF of tumor to max VAF of normal for non-signed out SNVs/Indels"
+                }
+            },
+            "required": [
+                "exclude_genes",
+                "exclude_classifications",
+                "access_min_cov",
+                "impact_min_cov",
+                "hotspot_cutoff",
+                "non_hotspot_cutoff",
+                "vaf_ratio_threshold"
+            ]
+            },
         "donor_normal" : {
             "type": "string",
             "default": "DONOR22-TP"
