@@ -19,18 +19,6 @@ include { ACCESSANALYSIS  } from './workflows/accessanalysis'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { PIPELINE_COMPLETION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { INFER_SAMPLES } from './modules/local/INFER_SAMPLES/main'
-include { getGenomeAttribute } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    GENOME PARAMETER VALUES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-// TODO nf-core: Remove this line if you don't need a FASTA file
-//   This is an example of how to use getGenomeAttribute() to fetch parameters
-//   from igenomes.config using `--genome`
-params.fasta = getGenomeAttribute('fasta')
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,7 +42,8 @@ workflow MSK_ACCESS_DATA_ANALYSIS_NF {
     )
     
     emit:
-    multiqc_report = ACCESSANALYSIS.out.multiqc_report
+    biometrics_summary = ACCESSANALYSIS.out.biometrics_summary
+    snv_indel = ACCESSANALYSIS.out.snv_indel
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,13 +87,10 @@ workflow {
     // SUBWORKFLOW: Run completion tasks
     //
     PIPELINE_COMPLETION (
-        params.email,
-        params.email_on_fail,
-        params.plaintext_email,
         params.outdir,
         params.monochrome_logs,
-        params.hook_url,
-        MSK_ACCESS_DATA_ANALYSIS_NF.out.multiqc_report
+        MSK_ACCESS_DATA_ANALYSIS_NF.out.biometrics_summary,
+        MSK_ACCESS_DATA_ANALYSIS_NF.out.snv_indel
     )
 }
 
