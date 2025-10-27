@@ -10,7 +10,8 @@ process COPY_NUMBER {
     tuple path(patient_json), val(patient_id)
     val research_access_cna_template
     path clinical_cna_file
-    val access_copy_number_gene_list
+    val access_copy_number_gene_list_v1
+    val access_copy_number_gene_list_v2
     val p_value_threshold
 
 
@@ -30,7 +31,8 @@ process COPY_NUMBER {
         --patient_json $patient_json \\
         --research_access_cna_template $research_access_cna_template \\
         --clinical_cna_file $clinical_cna_file \\
-        --access_copy_number_gene_list $access_copy_number_gene_list \\
+        --access_copy_number_gene_list_v1 $access_copy_number_gene_list_v1 \\
+        --access_copy_number_gene_list_v2 $access_copy_number_gene_list_v2 \\
         --p_value_threshold $p_value_threshold \\
         --output ${patient_id}.cnv.csv \\
         --output_final ${patient_id}.cnv.pass-filtered.csv \\

@@ -161,7 +161,8 @@ workflow ACCESSANALYSIS {
         patient_meta,
         params.file_paths.research_access.variant_file_template.cna,
         params.file_paths.clinical_impact.variant_file.cna,
-        params.access_copy_number_gene_list,
+        params.access_copy_number_gene_list_v1,
+        params.access_copy_number_gene_list_v2,
         params.copy_number_p_value_threshold
     )
 

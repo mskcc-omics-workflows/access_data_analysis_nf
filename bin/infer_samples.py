@@ -4,6 +4,7 @@ import argparse
 import csv
 import re
 import os
+import glob
 
 """
 Script to read in the CMO/DMP sample IDs and retrieve all associated
@@ -12,7 +13,7 @@ Samples specified in the include and exclude files will be filtered as well.
 Output is one JSON file per patient, containing all samples relevant to the patient under a combined cmo/dmp id.
 """
 
-def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, keep_research_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern):
+def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, keep_research_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern, research_access_mutations_maf_template):
     """ Main logic function to get all samples from the id mapping file, split them by patient, get the relevant samples, and save to JSON. """
 
     # Extract the cmo ids, dmp ids, sex, and combined ids from the input file.
@@ -49,6 +50,9 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
                     "assay_type": "research_access",
                     "anon_id": "NA"
                 }
+                donor_id = infer_research_donor(cmo_id, sample_id, research_access_mutations_maf_template)
+                if donor_id:
+                    sample_dict[combined_id]["samples"][sample_id]["donor_id"] = donor_id
         
         # 3. Find clinical samples if patient has a dmp id
         if dmp_id:
@@ -149,6 +153,17 @@ def infer_tumor_normal(sample_id):
     else:
         return "tumor"
 
+def infer_research_donor(cmo_id, sample_id, research_access_mutations_maf_template):
+
+    if infer_tumor_normal(sample_id) == "normal":
+        return None
+    
+    maf_pattern = research_access_mutations_maf_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
+    maf_file = glob.glob(maf_pattern)
+    donor = maf_file[0].split('.')[1]
+
+    return donor
+
 def get_id_mapping(id_mapping_file):
     """ Read in the cmo and dmp ids, generate the combined patient id, and save each patient id in a list. """
     id_list = []
@@ -223,8 +238,9 @@ if __name__ == "__main__":
     parser.add_argument("--research_access_bam_dir_template", required=True)
     parser.add_argument("--clinical_access_sample_regex_pattern", required=True)
     parser.add_argument("--clinical_impact_sample_regex_pattern", required=True)
+    parser.add_argument("--research_access_mutations_maf_template", required=True)
     args = parser.parse_args()
 
     get_all_samples(args.id_mapping_file, args.research_access_bam_dir_template, args.clinical_access_key_file, 
                    args.clinical_impact_key_file, args.keep_research_samples_file, args.exclude_samples_file, 
-                   args.clinical_access_sample_regex_pattern, args.clinical_impact_sample_regex_pattern)
+                   args.clinical_access_sample_regex_pattern, args.clinical_impact_sample_regex_pattern, args.research_access_mutations_maf_template)

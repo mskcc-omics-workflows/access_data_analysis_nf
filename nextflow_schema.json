@@ -281,7 +281,7 @@
         "ch_list": {
             "type": "string",
             "format":"file-path",
-            "exists": true,
+            "exists": true
         },
         "base_dirs": {
             "type": "object",
@@ -615,6 +615,10 @@
         "access_copy_number_gene_list": {
             "type": "string",
             "default": "AR,BRCA1,BRCA2,CDK4,EGFR,ERBB2,MET,MDM2,MLH1,MSH2,MSH6,MYC"
+        },
+        "access_copy_number_gene_list_v2": {
+            "type": "string",
+            "default": "ALK,APC,AR,ARID1A,ASXL1,ATM,BAP1,BRCA1,BRCA2,CDH1,CDK12,CDK4,CHEK2,DNMT3A,EGFR,ERBB2,ERBB3,ERCC2,FBXW7,FGFR2,FGFR3,KDM6A,KIT,MAP2K1,MAP2K2,MDM2,MET,MLH1,MSH2,MSH6,MTOR,MYC,MYCN,NF1,PALB2,PDGFRA,PIK3CA,PMS2,PTCH1,RB1,RET,SMAD4,TP53,TSC1,TSC2"
         },
         "copy_number_p_value_threshold": {
             "type": "number",
