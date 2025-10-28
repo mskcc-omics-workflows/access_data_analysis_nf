@@ -154,4 +154,27 @@ process SNV_INDEL_ADD_FACETS_ADJUSTED_VAF {
     """
 }
 
+process SNV_INDEL_CONVERT_TO_MAF {
+    label 'process_single'
+    tag "${patient_id}"
+    errorStrategy 'terminate'
+
+    input:
+        tuple val(patient_id), val(snv_indel_csvs)
+
+    publishDir "${params.outdir}/intermediate/${patient_id}", mode: 'copy', pattern: '*adj_vaf_all_impact.maf'
+    publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: '*.snv_indel.pass-filtered.adj_vaf.maf'
+    output:
+        tuple val(patient_id), path("*adj_vaf*.maf"), emit: adjusted_vaf_maf_results
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+    """
+    python3 ${workflow.projectDir}/bin/convert_snv_indel_to_maf.py \\
+        --variant_csvs ${snv_indel_csvs.join(' ')} \\
+    """
+}
+
 

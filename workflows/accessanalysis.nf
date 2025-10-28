@@ -16,6 +16,7 @@ include { SNV_INDEL_AGGREGATE_ALLELE_COUNTS } from '../modules/local/SNV_INDEL_F
 include { SNV_INDEL_ADD_FACETS_ADJUSTED_VAF } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
 include { SNV_INDEL_ADD_FILTER_COL } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
 include { SNV_INDEL_ANNOTATE_HOTSPOT_CH } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
+include {SNV_INDEL_CONVERT_TO_MAF } from '../modules/local/SNV_INDEL_FILTER_CALLS/main'
 include { COPY_NUMBER } from '../modules/local/COPY_NUMBER/main'
 include { STRUCTURAL_VARIANTS } from '../modules/local/STRUCTURAL_VARIANTS/main'
 include { MSI } from '../modules/local/MSI/main'
@@ -140,6 +141,16 @@ workflow ACCESSANALYSIS {
 
     SNV_INDEL_ADD_FACETS_ADJUSTED_VAF(
         snv_indel_adj_vaf_input
+    )
+
+    snv_indel_to_maf_input = SNV_INDEL_ADD_FILTER_COL.out.final_filtered_snv_indel_table
+    .join(SNV_INDEL_ADD_FACETS_ADJUSTED_VAF.out.adjusted_vaf_results, by:0)
+    .map { patient_id, table_snv_indel, adj_vaf_snv_indel ->
+        tuple(patient_id, [table_snv_indel] + adj_vaf_snv_indel)
+    }
+
+    SNV_INDEL_CONVERT_TO_MAF(
+        snv_indel_to_maf_input
     )
 
 
