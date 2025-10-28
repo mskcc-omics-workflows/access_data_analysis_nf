@@ -612,7 +612,7 @@
             "type": "string",
             "default": "DONOR22-TP"
         },
-        "access_copy_number_gene_list": {
+        "access_copy_number_gene_list_v1": {
             "type": "string",
             "default": "AR,BRCA1,BRCA2,CDK4,EGFR,ERBB2,MET,MDM2,MLH1,MSH2,MSH6,MYC"
         },
