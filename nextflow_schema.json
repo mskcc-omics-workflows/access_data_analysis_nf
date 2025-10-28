@@ -353,7 +353,15 @@
             "type": "object",
             "description": "Paths to biometrics resources used for ACCESS processing",
             "properties": {
-                "bed": {
+                "bed_v1": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^/.*\\.bed$",
+                "description": "BED file containing regions of interest for biometrics",
+                "errorMessage": "biometrics.bed must be an absolute path to an existing .bed file"
+                },
+                "bed_v2": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
