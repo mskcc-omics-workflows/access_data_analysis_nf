@@ -2,10 +2,6 @@ process FIND_FACETS_FIT {
     tag "$patient_id"
     label 'process_single'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'ghcr.io/msk-access/genotype_variants:0.3.9':
-        'ghcr.io/msk-access/genotype_variants:0.3.9' }"
-
     input:
     val facets_dir
     tuple path(patient_json), val(patient_id)

@@ -1,10 +1,6 @@
 process GENERATE_MAF {
     label 'process_single'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/multiqc:1.25.1--pyhdfd78af_0' :
-        'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
-
     input:
     path patient_json
     val research_access_mutations_maf_template

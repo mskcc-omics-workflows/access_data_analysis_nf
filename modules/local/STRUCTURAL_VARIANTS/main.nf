@@ -2,10 +2,6 @@ process STRUCTURAL_VARIANTS {
     tag "$patient_id"
     label 'process_single'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/multiqc:1.25.1--pyhdfd78af_0' :
-        'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
-
     input:
     tuple path(patient_json), val(patient_id)
     val research_access_sv_template
