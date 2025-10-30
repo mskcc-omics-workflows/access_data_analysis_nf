@@ -2,6 +2,11 @@ process STRUCTURAL_VARIANTS {
     tag "$patient_id"
     label 'process_single'
 
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
+
     input:
     tuple path(patient_json), val(patient_id)
     val research_access_sv_template

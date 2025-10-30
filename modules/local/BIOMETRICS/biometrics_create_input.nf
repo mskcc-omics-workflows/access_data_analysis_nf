@@ -1,6 +1,12 @@
 process BIOMETRICS_CREATE_INPUT {
     tag "$patient_id"
     label 'process_single'
+    errorStrategy 'terminate'
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/biometrics:0.2.16':
+        'ghcr.io/msk-access/biometrics:0.2.16' }"
 
     input:
     tuple path(patient_json), val(patient_id)

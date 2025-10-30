@@ -1,6 +1,11 @@
 process GENERATE_MAF {
     label 'process_single'
 
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
+
     input:
     path patient_json
     val research_access_mutations_maf_template

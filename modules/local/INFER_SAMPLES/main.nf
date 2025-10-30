@@ -1,5 +1,11 @@
 process INFER_SAMPLES {
     label 'process_single'
+    errorStrategy 'terminate'
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
     path id_mapping_file

@@ -1,7 +1,11 @@
 process BIOMETRICS_GENOTYPE {
     tag "$patient_id"
     label 'biometrics_genotype'
+
     conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/biometrics:0.2.16':
+        'ghcr.io/msk-access/biometrics:0.2.16' }"
 
     input:
     tuple val(patient_id), path(biometrics_input), path(biometrics_extract_db)

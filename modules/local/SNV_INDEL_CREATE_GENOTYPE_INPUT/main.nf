@@ -2,6 +2,11 @@ process SNV_INDEL_CREATE_GENOTYPE_INPUT {
     tag "$patient_id"
     label 'process_single'
 
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
+
     input:
     tuple path(patient_json), val(patient_id), path(all_calls_maf)
     val research_access_duplex_bam_template
@@ -12,7 +17,7 @@ process SNV_INDEL_CREATE_GENOTYPE_INPUT {
     val clinical_access_unfilter_bam_template
     val clinical_impact_standard_bam_template
 
-//    publishDir "${params.outdir}/intermediate/small_variants/${patient_id}", mode: 'copy', pattern: '*genotyping_input.tsv'
+    publishDir "${params.outdir}/intermediate/small_variants/${patient_id}", mode: 'copy', pattern: '*genotyping_input.tsv'
 
     output:
         tuple path(patient_json), val(patient_id), path("*genotyping_input.tsv"), emit: genotyping_input
