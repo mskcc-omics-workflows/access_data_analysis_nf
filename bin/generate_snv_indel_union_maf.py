@@ -126,7 +126,8 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf_te
     # find each research sample in the patient_data
     for sample_id, sample_data in patient_data.get("samples", {}).items():
         if sample_data.get('assay_type') == "research_access" and sample_data.get('tumor_normal') == "tumor":
-            maf_path = get_research_maf_path(cmo_id, sample_id, research_access_mutations_maf_template)
+            access_version = sample_data.get('access_version')
+            maf_path = get_research_maf_path(cmo_id, sample_id, access_version, research_access_mutations_maf_template)
             
             # add the variants from the maf file
             mutations, sample_tracking, sample_assay_types = parse_mutation_file(maf_path, "research")
@@ -139,14 +140,13 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf_te
     
     return research_mutations, combined_sample_tracking, combined_assay_types
 
-def get_research_maf_path(cmo_id, sample_id, research_access_mutations_maf_template):
-    maf_pattern = research_access_mutations_maf_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
-    maf_file = glob.glob(maf_pattern)
-    donor = maf_file[0].split('.')[1]
-    print(maf_file)
-    print(donor)
+def get_research_maf_path(cmo_id, sample_id, access_version, research_access_mutations_maf_template):
+    if access_version == "XS1":
+        maf_path = research_access_mutations_maf_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id).replace("{donor}", "DONOR22-TP")
+    if access_version == "XS2":
+        maf_path = research_access_mutations_maf_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id).replace("{donor}", "Donor19F21c2206-TP01")
 
-    return maf_file[0]
+    return maf_path
 
 def get_clinical_mutations(patient_data, dmp_mutations_file):
     """ Get clinical mutations from the given dmp file. """

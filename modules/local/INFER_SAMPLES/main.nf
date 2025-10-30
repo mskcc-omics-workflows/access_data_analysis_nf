@@ -1,5 +1,6 @@
 process INFER_SAMPLES {
     label 'process_single'
+    errorStrategy 'terminate'
 
     input:
     path id_mapping_file
@@ -10,7 +11,7 @@ process INFER_SAMPLES {
     val research_access_bam_dir_template
     val clinical_access_sample_regex_pattern
     val clinical_impact_sample_regex_pattern        
-    val research_access_mutations_maf_template
+    val research_access_manifest_file_template
 
     publishDir "${params.outdir}/intermediate/patient_JSONs", mode: 'copy'
 
@@ -29,7 +30,7 @@ process INFER_SAMPLES {
         --research_access_bam_dir_template '${research_access_bam_dir_template}' \\
         --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \\
         --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}' \\
-        --research_access_mutations_maf_template '${research_access_mutations_maf_template}'"
+        --research_access_manifest_file_template '${research_access_manifest_file_template}'"
     
     if [ -s "${keep_research_samples_file}" ]; then
         command="\$command --keep_research_samples_file '${keep_research_samples_file}'"

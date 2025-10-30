@@ -56,9 +56,7 @@ def get_clinical_signed_out_cnas(patient_data, dmp_id, clinical_cna_file, combin
                                 "p_val": "",
                                 "filter": "PASS",
                                 "assay": assay,
-                                "source": source,
-                                "donor": "",
-                                "access_gene_list": check_gene_lists(gene, access_gene_list_v1, access_gene_list_v2)
+                                "source": source
                             })
     return pd.DataFrame(clinical_calls), clinical_gene_event_set
 
@@ -76,7 +74,7 @@ def process_research_access_calls(
 ):
     research_calls = []
     for sample_id, sample_data in patient_data["samples"].items():
-        donor = sample_data.get("donor_id")
+        access_version = sample_data.get("access_version")
         if sample_data.get("assay_type") != "research_access" or sample_data.get("tumor_normal") != "tumor":
             continue
         cna_path = infer_research_cna_path(research_access_cna_template, cmo_id, sample_id)
@@ -105,22 +103,19 @@ def process_research_access_calls(
                            (cna_type == "DEL" and fc > fc_signedout_del):
                             filter_reasons.append("fc_filter_signedout")
                     else:
-                        if gene in access_gene_list_v1:
+                        if access_version == "XS1" and gene in access_gene_list_v1:
                             if (cna_type == "AMP" and fc < fc_denovo_amp) or \
                                (cna_type == "DEL" and fc > fc_denovo_del):
-                                filter_reasons.append("fc_filter_denovo_v1")
-                                gene_lists.append("access_v1")
-                        if gene in access_gene_list_v2:
+                                filter_reasons.append("fc_filter_denovo")
+                        if access_version == "XS2" and gene in access_gene_list_v2:
                             if (cna_type == "AMP" and fc < fc_denovo_amp) or \
                                (cna_type == "DEL" and fc > fc_denovo_del):
-                                filter_reasons.append("fc_filter_denovo_v2")
-                                gene_lists.append("access_v2")
+                                filter_reasons.append("fc_filter_denovo")
                         else:
                             filter_reasons.append("denovo_not_in_genelist")
                 else:
                     filter_reasons.append("unknown_event")
                 filter_str = ";".join(filter_reasons) if filter_reasons else "PASS"
-                gene_list_str = ";".join(gene_lists) if gene_lists else "not_in_gene_list"
                 research_calls.append({
                     "Hugo_Symbol": gene,
                     "cna_type": cna_type,
@@ -132,19 +127,9 @@ def process_research_access_calls(
                     "p_val": p_val,
                     "filter": filter_str,
                     "assay": assay,
-                    "source": source,
-                    "donor": donor,
-                    "access_gene_list": gene_list_str
+                    "source": source
                 })
     return pd.DataFrame(research_calls)
-
-def check_gene_lists(gene, access_gene_list_v1, access_gene_list_v2):
-    gene_lists = []
-    if gene in access_gene_list_v1:
-        gene_lists.append("access_v1")
-    if gene in access_gene_list_v2:
-        gene_lists.append("access_v2")
-    return ";".join(gene_lists) if gene_lists else "not_in_gene_list"
 
 def final_filter(df):
     """
@@ -224,7 +209,7 @@ def main(args):
     all_calls = add_variant_columns(all_calls, clinical_gene_event_set)
     all_calls = all_calls[
         ["Hugo_Symbol", "cna_type", "variant", "sample_id", "patient_id", "cmo_patient_id",
-         "dmp_patient_id", "fold_change", "p_val", "variant_clinical_status", "filter", "assay", "source", "donor", "access_gene_list"]
+         "dmp_patient_id", "fold_change", "p_val", "variant_clinical_status", "filter", "assay", "source"]
     ]
     save_to_csv(all_calls, args.output)
 
