@@ -3,6 +3,9 @@ process BIOMETRICS_EXTRACT {
     label 'biometrics_extract'
 
     conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/biometrics:0.2.16':
+        'ghcr.io/msk-access/biometrics:0.2.16' }"
 
     input:
     tuple val(patient_id), path(biometrics_input)

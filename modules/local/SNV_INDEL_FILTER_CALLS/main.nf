@@ -10,6 +10,11 @@ process SNV_INDEL_AGGREGATE_ALLELE_COUNTS {
     label 'process_single'
     tag "${patient_id}"
 
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
+
     input:
         tuple path(patient_json), val(patient_id), path(genotyping_output), path(all_small_calls_maf)
         val access_min_cov
@@ -45,6 +50,11 @@ process SNV_INDEL_AGGREGATE_ALLELE_COUNTS {
 process SNV_INDEL_ANNOTATE_HOTSPOT_CH {
     label 'process_single'
     tag "${patient_id}"
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
         tuple val(patient_id), path(snv_indel_csv)
@@ -82,6 +92,11 @@ process SNV_INDEL_ANNOTATE_HOTSPOT_CH {
 process SNV_INDEL_ADD_FILTER_COL {
     label 'process_single'
     tag "${patient_id}"
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
         tuple val(patient_id), path(snv_indel_csv)
@@ -130,6 +145,11 @@ process SNV_INDEL_ADD_FILTER_COL {
 process SNV_INDEL_ADD_FACETS_ADJUSTED_VAF {
     label 'process_single'
     tag "${patient_id}"
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
         tuple val(patient_id), val(sex), path(facets_fit), path(snv_indel_csv)

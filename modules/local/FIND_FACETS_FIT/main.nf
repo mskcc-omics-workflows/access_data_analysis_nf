@@ -2,9 +2,10 @@ process FIND_FACETS_FIT {
     tag "$patient_id"
     label 'process_single'
 
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'ghcr.io/msk-access/genotype_variants:0.3.9':
-        'ghcr.io/msk-access/genotype_variants:0.3.9' }"
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
     val facets_dir

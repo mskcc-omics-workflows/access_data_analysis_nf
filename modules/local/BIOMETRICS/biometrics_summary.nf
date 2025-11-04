@@ -2,6 +2,11 @@ process BIOMETRICS_SUMMARY {
     tag "$patient_id"
     label 'biometrics_summary'
 
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/biometrics:0.2.16':
+        'ghcr.io/msk-access/biometrics:0.2.16' }"
+
     input:
     tuple val(patient_id), path(biometrics_genotype_csv), path(biometrics_sexmismatch_csv)
 
