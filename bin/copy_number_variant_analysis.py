@@ -107,7 +107,7 @@ def process_research_access_calls(
                             if (cna_type == "AMP" and fc < fc_denovo_amp) or \
                                (cna_type == "DEL" and fc > fc_denovo_del):
                                 filter_reasons.append("fc_filter_denovo")
-                        if access_version == "XS2" and gene in access_gene_list_v2:
+                        elif access_version == "XS2" and gene in access_gene_list_v2:
                             if (cna_type == "AMP" and fc < fc_denovo_amp) or \
                                (cna_type == "DEL" and fc > fc_denovo_del):
                                 filter_reasons.append("fc_filter_denovo")
