@@ -164,9 +164,11 @@ def infer_access_version(sample_id, research_access_manifest_file_template):
                 if sample_id in line:
                     if "MSK-ACCESS-v1" in line:
                         return "XS1"
-                    if "MSK-ACCESS-v2" in line:
+                    elif "MSK-ACCESS-v2" in line:
                         return "XS2"
-                    return "not_found"
+                    else
+                        print(f'[WARNING]: sample {sample_id} not found in manifest file. ACCESS version assumed to be XS1')
+                        return "XS1"
 
 def infer_research_donor(cmo_id, sample_id, research_access_mutations_maf_template):
     
