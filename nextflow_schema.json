@@ -608,9 +608,13 @@
                 "vaf_ratio_threshold"
             ]
             },
-        "donor_normal" : {
+        "XS1_donor" : {
             "type": "string",
             "default": "DONOR22-TP"
+        },
+        "XS2_donor" : {
+            "type": "string",
+            "default": "Donor19F21c2206-TP01"
         },
         "access_copy_number_gene_list_v1": {
             "type": "string",

@@ -13,7 +13,7 @@ Samples specified in the include and exclude files will be filtered as well.
 Output is one JSON file per patient, containing all samples relevant to the patient under a combined cmo/dmp id.
 """
 
-def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, keep_research_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern, research_access_manifest_file_template, research_access_mutations_maf_template):
+def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_access_key_file, clinical_impact_key_file, keep_research_samples_file, exclude_samples_file, clinical_access_sample_regex_pattern, clinical_impact_sample_regex_pattern, research_access_manifest_file_template, research_access_mutations_maf_template, XS1_donor, XS2_donor):
     """ Main logic function to get all samples from the id mapping file, split them by patient, get the relevant samples, and save to JSON. """
 
     # Extract the cmo ids, dmp ids, sex, and combined ids from the input file.
@@ -53,8 +53,10 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
                 }
 
                 donor_id = infer_research_donor(cmo_id, sample_id, research_access_mutations_maf_template)
+                access_version = infer_access_version(sample_id, research_access_manifest_file_template)
                 if donor_id:
                     sample_dict[combined_id]["samples"][sample_id]["donor_id"] = donor_id
+                    validate_access_version(donor_id, access_version, XS1_donor, XS2_donor, sample_id)
 
         # 3. Find clinical samples if patient has a dmp id
         if dmp_id:
@@ -70,6 +72,14 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
         
     if not id_list:
         print("No samples found in input file.")
+
+def validate_access_version(donor_id, access_version, XS1_donor, XS2_donor, sample_id):
+    """ Validate that the inferred access version matches the inferred donor id. """
+
+    if access_version == "XS1" and donor_id != XS1_donor:
+        print(f"[WARNING]: Sample {sample_id} has conflicting donor and access version. Inferred ACCESS version {access_version} from manifest, but inferred {donor_id} from maf does not match expected XS1 donor {XS1_donor}.")
+    elif access_version == "XS2" and donor_id != XS2_donor:
+        print(f"[WARNING]: Sample {sample_id} has conflicting donor and access version. Inferred ACCESS version {access_version} from manifest, but inferred {donor_id} from maf does not match expected XS2 donor {XS2_donor}.")
 
 def find_research_samples(research_access_bam_dir_template, cmo_id):
     """ Find all valid research samples for a patient in the directory structure. """
@@ -166,7 +176,7 @@ def infer_access_version(sample_id, research_access_manifest_file_template):
                         return "XS1"
                     elif "MSK-ACCESS-v2" in line:
                         return "XS2"
-                    else
+                    else:
                         print(f'[WARNING]: sample {sample_id} not found in manifest file. ACCESS version assumed to be XS1')
                         return "XS1"
 
@@ -257,9 +267,13 @@ if __name__ == "__main__":
     parser.add_argument("--clinical_impact_sample_regex_pattern", required=True)
     parser.add_argument("--research_access_manifest_file_template", required=True)
     parser.add_argument("--research_access_mutations_maf_template", required=True)
+    parser.add_argument("--XS1_donor", required=True)
+    parser.add_argument("--XS2_donor", required=True)
+
     args = parser.parse_args()
 
     get_all_samples(args.id_mapping_file, args.research_access_bam_dir_template, args.clinical_access_key_file, 
                    args.clinical_impact_key_file, args.keep_research_samples_file, args.exclude_samples_file, 
                    args.clinical_access_sample_regex_pattern, args.clinical_impact_sample_regex_pattern, 
-                   args.research_access_manifest_file_template, args.research_access_mutations_maf_template)
+                   args.research_access_manifest_file_template, args.research_access_mutations_maf_template,
+                   args.XS1_donor, args.XS2_donor)

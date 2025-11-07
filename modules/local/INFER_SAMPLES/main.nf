@@ -13,6 +13,8 @@ process INFER_SAMPLES {
     val clinical_impact_sample_regex_pattern        
     val research_access_manifest_file_template
     val research_access_mutations_maf_template
+    val XS1_donor
+    val XS2_donor
 
     publishDir "${params.outdir}/intermediate/patient_JSONs", mode: 'copy'
 
@@ -32,7 +34,9 @@ process INFER_SAMPLES {
         --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \\
         --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}' \\
         --research_access_manifest_file_template '${research_access_manifest_file_template}' \\
-        --research_access_mutations_maf_template '${research_access_mutations_maf_template}'"
+        --research_access_mutations_maf_template '${research_access_mutations_maf_template}' \\
+        --XS1_donor '${XS1_donor}' \\
+        --XS2_donor '${XS2_donor}'"
     
     if [ -s "${keep_research_samples_file}" ]; then
         command="\$command --keep_research_samples_file '${keep_research_samples_file}'"
