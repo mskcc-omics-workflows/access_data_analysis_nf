@@ -29,7 +29,7 @@ process SNV_INDEL_GENOTYPE_VARIANTS {
     -i ${genotyping_input} \\
     -r ${fasta_ref} \\
     --filter-duplicate 1 \\
-    -g /work/access/production/resources/tools/GetBaseCountsMultiSample/current/GetBaseCountsMultiSample \\
+    -g /data1/core006/access/production/resources/tools/GetBaseCountsMultiSample/versions/GetBaseCountsMultiSample-1.2.5 \\
     -t ${task.cpus} \\
 
     """

@@ -21,23 +21,15 @@ process INFER_SAMPLES {
 
     script:
     """
-    command="python3 ../../../bin/infer_samples.py \\
-        --id_mapping_file ${id_mapping_file} \\
-        --clinical_access_key_file ${clinical_access_key_file} \\
-        --clinical_impact_key_file ${clinical_impact_key_file} \\
-        --research_access_bam_dir_template '${research_access_bam_dir_template}' \\
-        --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \\
-        --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}'"
-    
-    if [ -s "${keep_research_samples_file}" ]; then
-        command="\$command --keep_research_samples_file '${keep_research_samples_file}'"
-    fi
-    
-    if [ -s "${exclude_samples_file}" ]; then
-        command="\$command --exclude_samples_file '${exclude_samples_file}'"
-    fi
-    
-    echo \$command
-    eval \$command
+    python3 ${workflow.projectDir}/bin/infer_samples.py \
+        --id_mapping_file ${id_mapping_file} \
+        --clinical_access_key_file ${clinical_access_key_file} \
+        --clinical_impact_key_file ${clinical_impact_key_file} \
+        --research_access_bam_dir_template '${research_access_bam_dir_template}' \
+        --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \
+        --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}' \
+        ${keep_research_samples_file ? "--keep_research_samples_file ${keep_research_samples_file}" : ""} \
+        ${exclude_samples_file ? "--exclude_samples_file ${exclude_samples_file}" : ""}
     """
+
 }
