@@ -78,7 +78,11 @@ workflow {
         params.file_paths.clinical_impact.key_file,
         params.base_dirs.research_access.bam_dir_template,
         params.clinical_access_sample_regex_pattern,
-        params.clinical_impact_sample_regex_pattern
+        params.clinical_impact_sample_regex_pattern,
+        params.file_paths.research_access.manifest_file_template,
+        params.file_paths.research_access.variant_file_template.mutations,
+        params.XS1_donor,
+        params.XS2_donor
     )
 
     json_files = INFER_SAMPLES.out.all_samples_json.flatten()

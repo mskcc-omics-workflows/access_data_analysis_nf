@@ -24,7 +24,7 @@ def parse_assay_info(sample_meta):
     assay = parts[1].upper() if len(parts) > 1 else ""
     return source, assay
 
-def get_clinical_signed_out_cnas(patient_data, dmp_id, clinical_cna_file, combined_id):
+def get_clinical_signed_out_cnas(patient_data, dmp_id, clinical_cna_file, combined_id, access_gene_list_v1, access_gene_list_v2):
     clinical_calls = []
     clinical_gene_event_set = set()
     if dmp_id:
@@ -68,12 +68,13 @@ def infer_research_cna_path(template, cmo_id, sample_id):
     return path
 
 def process_research_access_calls(
-    patient_data, cmo_id, combined_id, access_gene_list,
+    patient_data, cmo_id, combined_id, access_gene_list_v1, access_gene_list_v2,
     clinical_gene_event_set, research_access_cna_template,
     pval_threshold, fc_denovo_amp, fc_denovo_del, fc_signedout_amp, fc_signedout_del
 ):
     research_calls = []
     for sample_id, sample_data in patient_data["samples"].items():
+        access_version = sample_data.get("access_version")
         if sample_data.get("assay_type") != "research_access" or sample_data.get("tumor_normal") != "tumor":
             continue
         cna_path = infer_research_cna_path(research_access_cna_template, cmo_id, sample_id)
@@ -92,6 +93,7 @@ def process_research_access_calls(
                     p_val = np.nan
                 cna_type = "AMP" if fc > 0 else "DEL" if fc < 0 else ""
                 filter_reasons = []
+                gene_lists = []
                 if not np.isnan(p_val) and p_val > pval_threshold:
                     filter_reasons.append("pval_filter")
                 is_signedout_event = (gene, cna_type) in clinical_gene_event_set
@@ -101,7 +103,11 @@ def process_research_access_calls(
                            (cna_type == "DEL" and fc > fc_signedout_del):
                             filter_reasons.append("fc_filter_signedout")
                     else:
-                        if gene in access_gene_list:
+                        if access_version == "XS1" and gene in access_gene_list_v1:
+                            if (cna_type == "AMP" and fc < fc_denovo_amp) or \
+                               (cna_type == "DEL" and fc > fc_denovo_del):
+                                filter_reasons.append("fc_filter_denovo")
+                        elif access_version == "XS2" and gene in access_gene_list_v2:
                             if (cna_type == "AMP" and fc < fc_denovo_amp) or \
                                (cna_type == "DEL" and fc > fc_denovo_del):
                                 filter_reasons.append("fc_filter_denovo")
@@ -186,13 +192,14 @@ def save_to_csv(df, output_file):
     print(f"{output_file} has been created.")
 
 def main(args):
-    access_gene_list = args.access_copy_number_gene_list.split(",")
+    access_gene_list_v1 = args.access_copy_number_gene_list_v1.split(",")
+    access_gene_list_v2 = args.access_copy_number_gene_list_v2.split(",")
     patient_data, cmo_id, dmp_id, combined_id = load_patient_data(args.patient_json)
     clinical_cnas, clinical_gene_event_set = get_clinical_signed_out_cnas(
-        patient_data, dmp_id, args.clinical_cna_file, combined_id
+        patient_data, dmp_id, args.clinical_cna_file, combined_id, access_gene_list_v1, access_gene_list_v2
     )
     research_cnas = process_research_access_calls(
-        patient_data, cmo_id, combined_id, access_gene_list,
+        patient_data, cmo_id, combined_id, access_gene_list_v1, access_gene_list_v2,
         clinical_gene_event_set, args.research_access_cna_template,
         args.p_value_threshold, args.fc_denovo_amp, args.fc_denovo_del,
         args.fc_signedout_amp, args.fc_signedout_del
@@ -222,7 +229,9 @@ if __name__ == "__main__":
                         help='Template for research access CNA file path. Use {cmo_patient_id} and {sample_id} as placeholders.')
     parser.add_argument("--clinical_cna_file", required=True,
                         help="TSV file with clinical signed-out CNA calls.")
-    parser.add_argument("--access_copy_number_gene_list", required=True,
+    parser.add_argument("--access_copy_number_gene_list_v1", required=True,
+                        help="Comma-separated list of genes eligible for ACCESS CNA reporting.")
+    parser.add_argument("--access_copy_number_gene_list_v2", required=True,
                         help="Comma-separated list of genes eligible for ACCESS CNA reporting.")
     parser.add_argument("--p_value_threshold", type=float, default=0.05,
                         help="P-value threshold for filtering research ACCESS CNAs.")
