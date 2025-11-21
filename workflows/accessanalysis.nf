@@ -166,7 +166,8 @@ workflow ACCESSANALYSIS {
     )
 
     emit:
-    multiqc_report = null // channel: /path/to/multiqc_report.html
+    biometrics_summary = BIOMETRICS_SUMMARY.out.biometrics_summary
+    snv_indel = SNV_INDEL_ADD_FACETS_ADJUSTED_VAF.out.adjusted_vaf_results
 }
 
 /*
