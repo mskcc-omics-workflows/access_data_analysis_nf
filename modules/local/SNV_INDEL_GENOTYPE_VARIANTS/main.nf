@@ -11,6 +11,7 @@ process SNV_INDEL_GENOTYPE_VARIANTS {
     input:
     tuple path(patient_json), val(patient_id), val(genotyping_input)
     val fasta_ref
+    val gbcms_path
 
 //    publishDir "${params.outdir}/intermediate/small_variants/${patient_id}/genotyped_mafs", mode: 'copy', pattern: '*.maf'
 
@@ -29,7 +30,7 @@ process SNV_INDEL_GENOTYPE_VARIANTS {
     -i ${genotyping_input} \\
     -r ${fasta_ref} \\
     --filter-duplicate 1 \\
-    -g /work/access/production/resources/tools/GetBaseCountsMultiSample/current/GetBaseCountsMultiSample \\
+    -g ${gbcms_path} \\
     -t ${task.cpus} \\
 
     """
