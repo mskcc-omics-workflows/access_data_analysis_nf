@@ -1,12 +1,12 @@
 process SNV_INDEL_GENOTYPE_VARIANTS {
     tag "$patient_id"
     label 'genotype_variants'
+    errorStrategy 'terminate'
 
     conda "${moduleDir}/environment.yml"
-
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'ghcr.io/msk-access/genotype_variants:0.3.9':
-        'ghcr.io/msk-access/genotype_variants:0.3.9' }"
+        'ghcr.io/msk-access/genotype_variants:sha-f0411c85':
+        'ghcr.io/msk-access/genotype_variants:sha-f0411c85' }"
 
     input:
     tuple path(patient_json), val(patient_id), val(genotyping_input)

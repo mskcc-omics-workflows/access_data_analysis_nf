@@ -1,6 +1,9 @@
 process BIOMETRICS_SUMMARY {
     tag "$patient_id"
     label 'biometrics_summary'
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/biometrics:latest':
+        'ghcr.io/msk-access/biometrics:latest' }"
 
     input:
     tuple val(patient_id), path(biometrics_genotype_csv), path(biometrics_sexmismatch_csv)
