@@ -37,6 +37,10 @@ process INFER_SAMPLES {
         --research_access_bam_dir_template '${research_access_bam_dir_template}' \
         --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \
         --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}' \
+        --research_access_manifest_file_template '${research_access_manifest_file_template}' \\
+        --research_access_mutations_maf_template '${research_access_mutations_maf_template}' \\
+        --XS1_donor '${XS1_donor}' \\
+        --XS2_donor '${XS2_donor}' \\
         ${keep_research_samples_file ? "--keep_research_samples_file ${keep_research_samples_file}" : ""} \
         ${exclude_samples_file ? "--exclude_samples_file ${exclude_samples_file}" : ""}
     """
