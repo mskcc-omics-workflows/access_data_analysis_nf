@@ -2,6 +2,9 @@ process BIOMETRICS_SEXMISMATCH {
     tag "$patient_id"
     label 'biometrics_genotype'
     conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/biometrics:latest':
+        'ghcr.io/msk-access/biometrics:latest' }"
 
     input:
     tuple val(patient_id), path(biometrics_input), path(biometrics_extract_db)

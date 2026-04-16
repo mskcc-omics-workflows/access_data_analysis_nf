@@ -9,4 +9,4 @@ dependencies:
   - pandas
   - importlib_metadata
   - pyvcf3
-  - biometrics 
+  - biometrics=0.2.15 

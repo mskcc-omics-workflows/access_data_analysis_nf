@@ -98,7 +98,8 @@ workflow ACCESSANALYSIS {
 
     SNV_INDEL_GENOTYPE_VARIANTS(
         SNV_INDEL_CREATE_GENOTYPE_INPUT.out.genotyping_input,
-        params.fasta_ref
+        params.fasta_ref,
+        params.gbcms_path
     )
 
     FIND_FACETS_FIT(

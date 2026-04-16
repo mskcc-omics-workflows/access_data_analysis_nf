@@ -125,6 +125,12 @@
             "exists": true,
             "pattern": "\\.fasta$"
         },
+        "gbcms_path": {
+            "type": "string",
+            "format":"directory",
+            "exists": true,
+            "pattern": "GetBaseCountsMultiSample"
+        },
         "hotspot_list": {
             "type": "string",
             "format":"file-path",

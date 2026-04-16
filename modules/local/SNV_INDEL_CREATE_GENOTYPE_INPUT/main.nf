@@ -3,8 +3,8 @@ process SNV_INDEL_CREATE_GENOTYPE_INPUT {
     label 'process_single'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/multiqc:1.25.1--pyhdfd78af_0' :
-        'biocontainers/multiqc:1.25.1--pyhdfd78af_0' }"
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
     tuple path(patient_json), val(patient_id), path(all_calls_maf)
@@ -16,7 +16,7 @@ process SNV_INDEL_CREATE_GENOTYPE_INPUT {
     val clinical_access_unfilter_bam_template
     val clinical_impact_standard_bam_template
 
-//    publishDir "${params.outdir}/intermediate/small_variants/${patient_id}", mode: 'copy', pattern: '*genotyping_input.tsv'
+    publishDir "${params.outdir}/intermediate/small_variants/${patient_id}", mode: 'copy', pattern: '*genotyping_input.tsv'
 
     output:
         tuple path(patient_json), val(patient_id), path("*genotyping_input.tsv"), emit: genotyping_input

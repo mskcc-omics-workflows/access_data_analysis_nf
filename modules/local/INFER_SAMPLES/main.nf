@@ -2,6 +2,10 @@ process INFER_SAMPLES {
     label 'process_single'
     errorStrategy 'terminate'
 
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6':
+        'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
+
     input:
     path id_mapping_file
     path keep_research_samples_file
@@ -26,27 +30,18 @@ process INFER_SAMPLES {
 
     script:
     """
-    command="python3 ../../../bin/infer_samples.py \\
-        --id_mapping_file ${id_mapping_file} \\
-        --clinical_access_key_file ${clinical_access_key_file} \\
-        --clinical_impact_key_file ${clinical_impact_key_file} \\
-        --research_access_bam_dir_template '${research_access_bam_dir_template}' \\
-        --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \\
-        --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}' \\
+    python3 ${workflow.projectDir}/bin/infer_samples.py \
+        --id_mapping_file ${id_mapping_file} \
+        --clinical_access_key_file ${clinical_access_key_file} \
+        --clinical_impact_key_file ${clinical_impact_key_file} \
+        --research_access_bam_dir_template '${research_access_bam_dir_template}' \
+        --clinical_access_sample_regex_pattern '${clinical_access_sample_regex_pattern}' \
+        --clinical_impact_sample_regex_pattern '${clinical_impact_sample_regex_pattern}' \
         --research_access_manifest_file_template '${research_access_manifest_file_template}' \\
         --research_access_mutations_maf_template '${research_access_mutations_maf_template}' \\
         --XS1_donor '${XS1_donor}' \\
-        --XS2_donor '${XS2_donor}'"
-    
-    if [ -s "${keep_research_samples_file}" ]; then
-        command="\$command --keep_research_samples_file '${keep_research_samples_file}'"
-    fi
-    
-    if [ -s "${exclude_samples_file}" ]; then
-        command="\$command --exclude_samples_file '${exclude_samples_file}'"
-    fi
-    
-    echo \$command
-    eval \$command
+        --XS2_donor '${XS2_donor}' \\
+        ${keep_research_samples_file ? "--keep_research_samples_file ${keep_research_samples_file}" : ""} \
+        ${exclude_samples_file ? "--exclude_samples_file ${exclude_samples_file}" : ""}
     """
 }

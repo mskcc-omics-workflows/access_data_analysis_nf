@@ -38,7 +38,7 @@ def get_all_samples(id_mapping_file, research_access_bam_dir_template, clinical_
             # named 'NO_INCLUDE_FILE' when no include file is actually provided. We need to detect this special
             # case and skip filtering when this placeholder is used. This is a temporary workaround that should
             # be replaced with a more elegant solution in future pipeline versions.
-            if keep_research_samples_file: # and not os.path.basename(keep_research_samples_file) == "NO_INCLUDE_FILE":
+            if keep_research_samples_file and not os.path.basename(keep_research_samples_file) == "NO_INCLUDE_FILE":
                 include_list = get_include_list(keep_research_samples_file, cmo_id)
                 research_samples = [s for s in research_samples if s in include_list]
             
@@ -89,10 +89,17 @@ def find_research_samples(research_access_bam_dir_template, cmo_id):
     try:
         for sample_name in os.listdir(research_access_bam_dir_root):
             current_path = os.path.join(research_access_bam_dir_root, sample_name, "current")
-            
+            # Check if all BAM files in the current directory are valid links
+            if os.path.isdir(current_path):
+                bam_files = [f for f in os.listdir(current_path) if f.endswith(".bam")]
+                if bam_files and all(os.path.exists(os.path.join(current_path, f)) for f in bam_files):
+                    research_samples.append(sample_name)
+                else:
+                    print(f'{sample_name} directory has broken bam links.')
+
             # Check for valid sample (has current dir with bam files)
-            if os.path.isdir(current_path) and any(f.endswith(".bam") for f in os.listdir(current_path)):
-                research_samples.append(sample_name)
+            # if os.path.isdir(current_path) and any(f.endswith(".bam") for f in os.listdir(current_path)):
+            #     research_samples.append(sample_name)
             else:
                 print(f'{sample_name} is not a valid research sample.')
     except FileNotFoundError:
