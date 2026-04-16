@@ -89,10 +89,17 @@ def find_research_samples(research_access_bam_dir_template, cmo_id):
     try:
         for sample_name in os.listdir(research_access_bam_dir_root):
             current_path = os.path.join(research_access_bam_dir_root, sample_name, "current")
-            
+            # Check if all BAM files in the current directory are valid links
+            if os.path.isdir(current_path):
+                bam_files = [f for f in os.listdir(current_path) if f.endswith(".bam")]
+                if bam_files and all(os.path.exists(os.path.join(current_path, f)) for f in bam_files):
+                    research_samples.append(sample_name)
+                else:
+                    print(f'{sample_name} directory has broken bam links.')
+
             # Check for valid sample (has current dir with bam files)
-            if os.path.isdir(current_path) and any(f.endswith(".bam") for f in os.listdir(current_path)):
-                research_samples.append(sample_name)
+            # if os.path.isdir(current_path) and any(f.endswith(".bam") for f in os.listdir(current_path)):
+            #     research_samples.append(sample_name)
             else:
                 print(f'{sample_name} is not a valid research sample.')
     except FileNotFoundError:
