@@ -6,6 +6,7 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
                     vaf_ratio_threshold=2.0):
     """
     Add filter annotations:
+    - Ns_in_allele: N characters present in Reference_Allele or Tumor_Seq_Allele2
     - excluded_gene: Hugo_Symbol is in exclude_genes
     - excluded_classification: Variant_Classification is in exclude_classifications
     - low_access_cov: variant not covered in any ACCESS samples (all low_coverage)
@@ -17,6 +18,15 @@ def filter_variants(calls_df, exclude_genes, exclude_classifications,
 
     if df.empty:
         return df
+
+    # --- Check for N characters in alleles ---
+    if not set(['Reference_Allele', 'Tumor_Seq_Allele2']).issubset(df.columns):
+        print(f"[ERROR] Missing required columns for N character filtering: Reference_Allele, Tumor_Seq_Allele2")
+    else:
+        # Check for N in either reference or alternate allele
+        n_mask = (df['Reference_Allele'].str.contains('N', case=False) | 
+                 df['Tumor_Seq_Allele2'].str.contains('N', case=False))
+        df.loc[n_mask, 'filter'] = 'Ns_in_allele'
 
     # --- Excluded genes ---
     if not set(['Hugo_Symbol']).issubset(df.columns):
