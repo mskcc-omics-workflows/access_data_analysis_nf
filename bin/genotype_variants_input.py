@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import pandas as pd
 import argparse
@@ -63,6 +64,15 @@ def extract_bam_paths(patient_data, templates):
             entry["standard_bam"] = get_bams(sample_data, templates["clinical_impact_standard_bam_template"])
 
         # add all the bam paths for one sample to the bam_paths list
+        # First check if any of the BAMs are missing
+        keep=1
+        for keys in entry:
+            if entry[keys] == "MISSING_PATH":
+                sys.stderr.write(f"[WARNING]: Ignoring sample {sample_id} because BAM file for {keys} is missing.\n")
+                keep=0
+                break
+        if keep==0:
+            continue
         bam_paths.append(entry)
     
     # return the list of bam_paths, where each row is a sample and the columns are the different bam types
