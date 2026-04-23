@@ -1,5 +1,6 @@
 import pandas as pd
 import argparse
+import sys
 
 def process_biometrics_results(genotype_file, sexmismatch_file):
     # --- Load inputs ---
@@ -24,7 +25,10 @@ def process_biometrics_results(genotype_file, sexmismatch_file):
         num_unexpected_mismatches = (group_df['Status'] == 'Unexpected Mismatch').sum()
 
         # Determine genotype QC status
-        genotype_qc_status = "PASS" if (num_unexpected_mismatches == 0 and num_unexpected_matches == 0) else "FAIL"
+        genotype_qc_status = "PASS"
+        if num_unexpected_mismatches > 0 or num_unexpected_matches > 0:
+            genotype_qc_status = "FAIL"
+            sys.stderr.write(f"[WARNING]: {group_name} has one or more samples with unexpected biometrics results.\n")
 
         # Determine which ReferenceSamples had most unexpected results
         sample_max_unexpected = ""
@@ -46,6 +50,7 @@ def process_biometrics_results(genotype_file, sexmismatch_file):
             mismatched_samples = sex_subset.loc[sex_subset['sex_mismatch'] == True, 'sample'].tolist()
             if mismatched_samples:
                 sex_mismatch_qc_status = "FAIL"
+                sys.stderr.write(f"[WARNING]: {group_name} has one or more samples with biometrics sex mismatch.\n")
                 sample_sex_mismatch = ";".join(mismatched_samples)
 
         results.append({
