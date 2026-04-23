@@ -43,6 +43,7 @@ def get_bams(sample_data, template):
     if validate_bam(bam_path):
         return(str(os.path.realpath(bam_path)))
     else:
+        sys.stderr.write(f"[WARNING] BAM or BAI file for {sample_id} missing. This sample will be excluded from subsequent analysis.\n")
         return "MISSING_PATH"
 
 
@@ -63,7 +64,7 @@ def validate_bam(bam_path):
     if os.path.isfile(bai_path_1) or os.path.isfile(bai_path_2):
         return True
     else:
-        print(f"[WARNING] BAM index file (.bai) not found for: {bam_path}")
+        print(f"[ERROR] BAM index file (.bai) not found for: {bam_path}")
         return False
 
 if __name__ == "__main__":
