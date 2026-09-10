@@ -18,7 +18,7 @@
 include { ACCESSANALYSIS  } from './workflows/accessanalysis'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { PIPELINE_COMPLETION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
-include { INFER_SAMPLES } from './modules/local/INFER_SAMPLES/main'
+include { SPLIT_SAMPLESHEET } from './modules/local/SPLIT_SAMPLESHEET/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,14 +31,13 @@ include { INFER_SAMPLES } from './modules/local/INFER_SAMPLES/main'
 //
 workflow MSK_ACCESS_DATA_ANALYSIS_NF {
 
-    //take:
     take:
-    patient_json
+    patient_sheet
 
     main:
 
     ACCESSANALYSIS (
-        patient_json
+        patient_sheet
     )
     
     emit:
@@ -70,23 +69,14 @@ workflow {
     // WORKFLOW: Run main workflow
     //
 
-    INFER_SAMPLES (
-        PIPELINE_INITIALISATION.out.samplesheet,
-        params.keep_research_samples_file ?: "$projectDir/assets/NO_INCLUDE_FILE",
-        params.exclude_samples_file ?: "$projectDir/assets/NO_EXCLUDE_FILE",
-        params.file_paths.clinical_access.key_file,
-        params.file_paths.clinical_impact.key_file,
-        params.base_dirs.research_access.bam_dir_template,
-        params.clinical_access_sample_regex_pattern,
-        params.clinical_impact_sample_regex_pattern,
-        params.file_paths.research_access.manifest_file_template,
-        params.file_paths.research_access.variant_file_template.mutations,
-        params.XS1_donor,
-        params.XS2_donor
+    // Split the Voyager-prepared cohort samplesheet into one CSV per patient,
+    // then fan out one pipeline run per patient.
+    SPLIT_SAMPLESHEET (
+        PIPELINE_INITIALISATION.out.samplesheet
     )
 
-    json_files = INFER_SAMPLES.out.all_samples_json.flatten()
-    json_files | MSK_ACCESS_DATA_ANALYSIS_NF
+    patient_sheets = SPLIT_SAMPLESHEET.out.patient_samplesheets.flatten()
+    patient_sheets | MSK_ACCESS_DATA_ANALYSIS_NF
     //
     // SUBWORKFLOW: Run completion tasks
     //

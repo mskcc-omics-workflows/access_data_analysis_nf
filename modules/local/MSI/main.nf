@@ -7,15 +7,14 @@ process MSI {
         'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
-    tuple path(patient_json), val(patient_id)
-    val reseach_access_msi_template
+    tuple path(patient_sheet), val(patient_id)
     path clinical_access_msi_file
     path clinical_impact_msi_file
 
     publishDir "${params.outdir}/final/${patient_id}", mode: 'copy', pattern: '*msi.csv'
 
     output:
-        tuple path(patient_json), path("*msi.csv"), emit: msi_results
+        tuple path(patient_sheet), path("*msi.csv"), emit: msi_results
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,8 +23,7 @@ process MSI {
 
     """
     python3 ${workflow.projectDir}/bin/msi_analysis.py \\
-        --patient_json $patient_json \\
-        --reseach_access_msi_template $reseach_access_msi_template \\
+        --patient_sheet $patient_sheet \\
         --clinical_access_msi_file $clinical_access_msi_file \\
         --clinical_impact_msi_file $clinical_impact_msi_file \\
         --output ${patient_id}.msi.csv

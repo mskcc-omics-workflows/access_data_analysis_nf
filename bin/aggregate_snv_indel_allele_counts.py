@@ -3,12 +3,9 @@ import os
 import pandas as pd
 import numpy as np
 import argparse
-import json
 from pathlib import Path
 
-def load_patient_json(patient_json_path):
-    with open(patient_json_path) as f:
-        return json.load(f)
+from patient_sheet import load_patient_data
 
 def read_maf(maf_path):
     return pd.read_csv(maf_path, sep='\t', low_memory=False)
@@ -91,9 +88,9 @@ def get_call_status(row, access_min_cov=100, impact_min_cov=50):
         return ""
 
 
-def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, output_path, access_min_cov=100, impact_min_cov=50):
-    # Load patient JSON
-    patient_data = load_patient_json(patient_json_path)
+def aggregate_variants(patient_sheet, genotyped_mafs, union_calls_maf, output_path, access_min_cov=100, impact_min_cov=50):
+    # Load the per-patient samplesheet slice
+    patient_data = load_patient_data(patient_sheet)
     patient_id = patient_data["combined_id"]
     union_df = pd.read_csv(union_calls_maf, sep="\t", low_memory=False)
     union_df_cols = [
@@ -166,7 +163,7 @@ def aggregate_variants(patient_json_path, genotyped_mafs, union_calls_maf, outpu
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aggregate allele counts for all variants across all samples of a patient.")
-    parser.add_argument("--patient_json", required=True)
+    parser.add_argument("--patient_sheet", required=True, help="Per-patient samplesheet CSV")
     parser.add_argument("--genotyped_mafs", nargs="+", required=True, help="List of all genotyped MAF files")
     parser.add_argument("--union_calls_maf", required=True)
     parser.add_argument("--access_min_cov", type=int, default=100, help="Minimum coverage threshold for ACCESS samples (default: %(default)s)")
@@ -176,7 +173,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     aggregate_variants(
-        args.patient_json,
+        args.patient_sheet,
         args.genotyped_mafs,
         args.union_calls_maf,
         args.output,

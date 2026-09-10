@@ -15,7 +15,7 @@ process SNV_INDEL_AGGREGATE_ALLELE_COUNTS {
         'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
-        tuple path(patient_json), val(patient_id), path(genotyping_output), path(all_small_calls_maf)
+        tuple path(patient_sheet), val(patient_id), path(genotyping_output), path(all_small_calls_maf)
         val access_min_cov
         val impact_min_cov
 
@@ -30,7 +30,7 @@ process SNV_INDEL_AGGREGATE_ALLELE_COUNTS {
     script:
     """
     python3 ${workflow.projectDir}/bin/aggregate_snv_indel_allele_counts.py \\
-        --patient_json $patient_json \\
+        --patient_sheet $patient_sheet \\
         --genotyped_mafs $genotyping_output \\
         --union_calls_maf $all_small_calls_maf \\
         --output ${patient_id}.snv_indel.allele_counts.csv \\

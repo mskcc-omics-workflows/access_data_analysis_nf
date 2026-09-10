@@ -1,8 +1,9 @@
 import csv
 import pandas as pd
 import argparse
-import json
 import os
+
+from patient_sheet import load_patient_data
 
 def parse_assay_info(sample_meta):
     """Extract source and assay from sample metadata."""
@@ -12,27 +13,17 @@ def parse_assay_info(sample_meta):
     assay = parts[1].upper() if len(parts) > 1 else ""
     return source, assay
 
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        cmo_id = patient_data['cmo_id']
-        dmp_id = patient_data['dmp_id']
-        combined_id = patient_data['combined_id']
-    return patient_data, cmo_id, dmp_id, combined_id
+def load_patient_meta(patient_sheet):
+    patient_data = load_patient_data(patient_sheet)
+    return patient_data, patient_data['cmo_id'], patient_data['dmp_id'], patient_data['combined_id']
 
-def infer_research_access_msi_path(research_access_msi_template, cmo_id, sample_id):
-    research_access_msi_path = research_access_msi_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
-    if not os.path.isfile(os.path.realpath(research_access_msi_path)):
-        print(f"[WARNING] MSI file not found: {research_access_msi_path}.")
-        return None
-    return research_access_msi_path
-
-def get_research_access_msi_data(patient_data, cmo_id, research_access_msi_template):
+def get_research_access_msi_data(patient_data):
     research_access_msi_scores = []
     for sample_id, sample_data in patient_data["samples"].items():
         if sample_data.get('assay_type') == "research_access" and sample_data.get('tumor_normal') == "tumor":
-            research_access_msi_path = infer_research_access_msi_path(research_access_msi_template, cmo_id, sample_id)
-            if not research_access_msi_path:
+            research_access_msi_path = sample_data.get('msi_file', '')
+            if not research_access_msi_path or not os.path.isfile(os.path.realpath(research_access_msi_path)):
+                print(f"[WARNING] MSI file not found for {sample_id}: {research_access_msi_path}")
                 continue
             with open(research_access_msi_path, 'r') as f:
                 reader = csv.DictReader(f, delimiter='\t')
@@ -104,10 +95,10 @@ def get_clinical_impact_msi_data(patient_data, dmp_id, clinical_impact_msi_file)
                 })
     return clinical_impact_msi_scores
 
-def generate_msi_table(patient_json, research_access_msi_template, clinical_access_msi_file, clinical_impact_msi_file):
-    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
+def generate_msi_table(patient_sheet, clinical_access_msi_file, clinical_impact_msi_file):
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_meta(patient_sheet)
 
-    research_access_msi_scores = get_research_access_msi_data(patient_data, cmo_id, research_access_msi_template)
+    research_access_msi_scores = get_research_access_msi_data(patient_data)
     clinical_access_msi_scores = get_clinical_access_msi_data(patient_data, dmp_id, clinical_access_msi_file)
     clinical_impact_msi_scores = get_clinical_impact_msi_data(patient_data, dmp_id, clinical_impact_msi_file)
 
@@ -127,13 +118,12 @@ def generate_msi_table(patient_json, research_access_msi_template, clinical_acce
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate MSI score table.")
-    parser.add_argument("--patient_json", required=True, help="Path to patient JSON file.")
-    parser.add_argument("--reseach_access_msi_template", required=True, help="Research access MSI template file path.")
+    parser.add_argument("--patient_sheet", required=True, help="Per-patient samplesheet CSV")
     parser.add_argument("--clinical_access_msi_file", required=True, help="Clinical ACCESS MSI file path.")
     parser.add_argument("--clinical_impact_msi_file", required=True, help="Clinical IMPACT MSI file path.")
     parser.add_argument("--output", required=True, help="Output CSV file.")
 
     args = parser.parse_args()
-    df = generate_msi_table(args.patient_json, args.reseach_access_msi_template, args.clinical_access_msi_file, args.clinical_impact_msi_file)
+    df = generate_msi_table(args.patient_sheet, args.clinical_access_msi_file, args.clinical_impact_msi_file)
     df.to_csv(args.output, index=False)
     print(f'{args.output} has been created.')

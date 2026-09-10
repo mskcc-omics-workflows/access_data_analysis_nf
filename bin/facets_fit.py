@@ -2,13 +2,14 @@ import glob
 from pathlib import Path
 import pandas as pd
 import argparse
-import json
 import os
 import re
 
-def get_facets_data(facets_dir, patient_json, best_fit):
+from patient_sheet import load_patient_data
 
-    patient_data = load_patient_data(patient_json)
+def get_facets_data(facets_dir, patient_sheet, best_fit):
+
+    patient_data = load_patient_data(patient_sheet)
     dmp_id = patient_data["dmp_id"]
     combined_id = patient_data["combined_id"]
 
@@ -94,11 +95,6 @@ def find_best_facets_fit_file(facets_dir, dmp_id):
 
     return facets_fits[0], fit_name
 
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        return patient_data
-
 def write_to_txt(facets_files, patient_id):
     output_file = f"{patient_id}_facets_fit.txt"
 
@@ -118,10 +114,10 @@ def read_manifest(manifest_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find facets fit.")
-    parser.add_argument("--facets_dir", required=True, help="Path to samples CSV file.")
-    parser.add_argument("--patient_json", required=True)
+    parser.add_argument("--facets_dir", required=True, help="Path to FACETS directory.")
+    parser.add_argument("--patient_sheet", required=True, help="Per-patient samplesheet CSV")
     parser.add_argument("--best_fit", required=False)
     args = parser.parse_args()
 
-    get_facets_data(args.facets_dir, args.patient_json, args.best_fit)
+    get_facets_data(args.facets_dir, args.patient_sheet, args.best_fit)
 

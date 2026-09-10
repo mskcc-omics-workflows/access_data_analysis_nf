@@ -29,41 +29,38 @@ include { MSI } from '../modules/local/MSI/main'
 workflow ACCESSANALYSIS {
 
     take:
-    patient_json
+    patient_sheet   // channel: one Voyager per-patient samplesheet CSV per patient
 
     main:
 
     //
     // WORKFLOW: Run pipeline
     //
- 
-    patient_meta = patient_json.map { file ->
-        def json = new groovy.json.JsonSlurper().parseText(file.text)
-        def patient_id = json.combined_id
-        tuple(file, patient_id)
+
+    // Every module consumes the per-patient samplesheet directly (all file
+    // paths are pre-resolved by Voyager), plus the patient id for tagging.
+    patient_meta = patient_sheet.map { sheet ->
+        def rows = sheet.splitCsv(header: true)
+        def patient_id = rows[0].combined_id
+        tuple(sheet, patient_id)
     }
 
-    id_sex_mapping = patient_json.map { file ->
-        def json = new groovy.json.JsonSlurper().parseText(file.text)
-        def patient_id = json.combined_id
-        def sex        = json.sex
-    tuple(patient_id, sex)
-}
+    id_sex_mapping = patient_sheet.map { sheet ->
+        def rows = sheet.splitCsv(header: true)
+        tuple(rows[0].combined_id, rows[0].sex)
+    }
 
     BIOMETRICS_CREATE_INPUT(
-        patient_meta,
-        params.file_paths.research_access.bam_file_template.standard,
-        params.file_paths.clinical_access.bam_file_template.standard,
-        params.file_paths.clinical_impact.bam_file_template.standard
+        patient_meta
     )
-    
+
     BIOMETRICS_EXTRACT(
         BIOMETRICS_CREATE_INPUT.out.biometrics_input,
         params.fasta_ref,
         params.biometrics.bed,
         params.biometrics.vcf
     )
-   
+
     BIOMETRICS_GENOTYPE(BIOMETRICS_EXTRACT.out.biometrics_extract)
 
     BIOMETRICS_SEXMISMATCH(BIOMETRICS_EXTRACT.out.biometrics_extract)
@@ -75,44 +72,29 @@ workflow ACCESSANALYSIS {
 
     SNV_INDEL_GENERATE_UNION_MAF(
         patient_meta,
-        params.file_paths.research_access.variant_file_template.mutations,
         params.file_paths.clinical_impact.variant_file.mutations
     )
 
     SNV_INDEL_CREATE_GENOTYPE_INPUT(
-        SNV_INDEL_GENERATE_UNION_MAF.out.maf_results,
-
-        // Research ACCESS templates
-        params.file_paths.research_access.bam_file_template.duplex,
-        params.file_paths.research_access.bam_file_template.simplex,
-        params.file_paths.research_access.bam_file_template.unfilter,
-
-        // Clinical ACCESS templates
-        params.file_paths.clinical_access.bam_file_template.duplex,
-        params.file_paths.clinical_access.bam_file_template.simplex,
-        params.file_paths.clinical_access.bam_file_template.unfilter,
-
-        // Clinical IMPACT templates
-        params.file_paths.clinical_impact.bam_file_template.standard
+        SNV_INDEL_GENERATE_UNION_MAF.out.maf_results
     )
 
     SNV_INDEL_GENOTYPE_VARIANTS(
         SNV_INDEL_CREATE_GENOTYPE_INPUT.out.genotyping_input,
-        params.fasta_ref,
-        params.gbcms_path
+        params.fasta_ref
     )
 
     FIND_FACETS_FIT(
         params.base_dirs.clinical_impact.facets_dir,
         patient_meta
-    )              
+    )
 
     snv_indel_aggregate_input = SNV_INDEL_GENOTYPE_VARIANTS.out.genotyped_mafs
     .join(SNV_INDEL_GENERATE_UNION_MAF.out.maf_results, by: 1)
-    .map { patient_id, geno_json, geno_mafs, union_json, union_maf -> 
-        tuple(geno_json, patient_id, geno_mafs, union_maf)
+    .map { patient_id, geno_sheet, geno_mafs, union_sheet, union_maf ->
+        tuple(geno_sheet, patient_id, geno_mafs, union_maf)
     }
-    
+
     SNV_INDEL_AGGREGATE_ALLELE_COUNTS(
         snv_indel_aggregate_input,
         params.variant_filter_rules.access_min_cov,
@@ -124,7 +106,7 @@ workflow ACCESSANALYSIS {
         params.ch_list
     )
     SNV_INDEL_ADD_FILTER_COL(
-        SNV_INDEL_ANNOTATE_HOTSPOT_CH.out.hotspot_ch_annotated_snv_indel, 
+        SNV_INDEL_ANNOTATE_HOTSPOT_CH.out.hotspot_ch_annotated_snv_indel,
         params.variant_filter_rules.exclude_genes,
         params.variant_filter_rules.exclude_classifications,
         params.variant_filter_rules.hotspot_cutoff,
@@ -146,21 +128,18 @@ workflow ACCESSANALYSIS {
 
     STRUCTURAL_VARIANTS(
         patient_meta,
-        params.file_paths.research_access.variant_file_template.sv,
         params.file_paths.clinical_impact.variant_file.sv,
         params.access_structural_variant_gene_list
     )
 
     MSI(
         patient_meta,
-        params.file_paths.research_access.variant_file_template.msi,
         params.file_paths.clinical_access.variant_file.msi,
         params.file_paths.clinical_impact.variant_file.msi
     )
 
     COPY_NUMBER (
         patient_meta,
-        params.file_paths.research_access.variant_file_template.cna,
         params.file_paths.clinical_impact.variant_file.cna,
         params.access_copy_number_gene_list_v1,
         params.access_copy_number_gene_list_v2,

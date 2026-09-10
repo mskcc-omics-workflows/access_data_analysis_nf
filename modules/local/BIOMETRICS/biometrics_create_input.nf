@@ -8,10 +8,7 @@ process BIOMETRICS_CREATE_INPUT {
         'ghcr.io/msk-access/postprocessing_variant_calls:0.2.6' }"
 
     input:
-    tuple path(patient_json), val(patient_id)
-    val research_access_standard_bam_template
-    val clinical_access_standard_bam_template
-    val clinical_impact_standard_bam_template
+    tuple path(patient_sheet), val(patient_id)
 
     publishDir "${params.outdir}/intermediate/biometrics/${patient_id}", mode: 'copy', pattern: '*biometrics_input.csv'
 
@@ -24,11 +21,7 @@ process BIOMETRICS_CREATE_INPUT {
     script:
     """
     python3 ${workflow.projectDir}/bin/create_biometrics_input_table.py \\
-        --patient_json $patient_json \\
-        --research_access_standard_bam_template $research_access_standard_bam_template \\
-        --clinical_access_standard_bam_template $clinical_access_standard_bam_template \\
-        --clinical_impact_standard_bam_template $clinical_impact_standard_bam_template \\
-
+        --patient_sheet $patient_sheet
     """
 
 }

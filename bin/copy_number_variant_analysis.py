@@ -2,13 +2,13 @@ import csv
 import pandas as pd
 import os
 import argparse
-import json
 import numpy as np
 
-def load_patient_data(patient_json):
-    """Load patient metadata and sample info from a JSON file."""
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
+from patient_sheet import load_patient_data
+
+def load_patient_meta(patient_sheet):
+    """Load patient metadata and sample info from the per-patient samplesheet."""
+    patient_data = load_patient_data(patient_sheet)
     return (
         patient_data,
         patient_data['cmo_id'],
@@ -60,16 +60,9 @@ def get_clinical_signed_out_cnas(patient_data, dmp_id, clinical_cna_file, combin
                             })
     return pd.DataFrame(clinical_calls), clinical_gene_event_set
 
-def infer_research_cna_path(template, cmo_id, sample_id):
-    path = template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
-    if not os.path.isfile(os.path.realpath(path)):
-        print(f"[WARNING] CNA file not found: {path}")
-        return None
-    return path
-
 def process_research_access_calls(
     patient_data, cmo_id, combined_id, access_gene_list_v1, access_gene_list_v2,
-    clinical_gene_event_set, research_access_cna_template,
+    clinical_gene_event_set,
     pval_threshold, fc_denovo_amp, fc_denovo_del, fc_signedout_amp, fc_signedout_del
 ):
     research_calls = []
@@ -77,8 +70,9 @@ def process_research_access_calls(
         access_version = sample_data.get("access_version")
         if sample_data.get("assay_type") != "research_access" or sample_data.get("tumor_normal") != "tumor":
             continue
-        cna_path = infer_research_cna_path(research_access_cna_template, cmo_id, sample_id)
-        if not cna_path:
+        cna_path = sample_data.get("cna_file", "")
+        if not cna_path or not os.path.isfile(os.path.realpath(cna_path)):
+            print(f"[WARNING] CNA file not found for {sample_id}: {cna_path}")
             continue
         source, assay = parse_assay_info(sample_data)
         with open(cna_path, 'r') as f:
@@ -194,13 +188,13 @@ def save_to_csv(df, output_file):
 def main(args):
     access_gene_list_v1 = args.access_copy_number_gene_list_v1.split(",")
     access_gene_list_v2 = args.access_copy_number_gene_list_v2.split(",")
-    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(args.patient_json)
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_meta(args.patient_sheet)
     clinical_cnas, clinical_gene_event_set = get_clinical_signed_out_cnas(
         patient_data, dmp_id, args.clinical_cna_file, combined_id, access_gene_list_v1, access_gene_list_v2
     )
     research_cnas = process_research_access_calls(
         patient_data, cmo_id, combined_id, access_gene_list_v1, access_gene_list_v2,
-        clinical_gene_event_set, args.research_access_cna_template,
+        clinical_gene_event_set,
         args.p_value_threshold, args.fc_denovo_amp, args.fc_denovo_del,
         args.fc_signedout_amp, args.fc_signedout_del
     )
@@ -223,10 +217,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compile clinical and research CNA calls for a patient.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--patient_json", required=True,
-                        help="Path to patient JSON file containing metadata and sample info.")
-    parser.add_argument("--research_access_cna_template", required=True,
-                        help='Template for research access CNA file path. Use {cmo_patient_id} and {sample_id} as placeholders.')
+    parser.add_argument("--patient_sheet", required=True,
+                        help="Per-patient samplesheet CSV")
     parser.add_argument("--clinical_cna_file", required=True,
                         help="TSV file with clinical signed-out CNA calls.")
     parser.add_argument("--access_copy_number_gene_list_v1", required=True,

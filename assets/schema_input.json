@@ -1,27 +1,98 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/accessanalysis/master/assets/schema_input.json",
-    "title": "nf-core/accessanalysis pipeline - params.input schema",
-    "description": "Schema for the id_mappings.csv provided with params.input",
+    "$id": "https://raw.githubusercontent.com/mskcc-omics-workflows/access_data_analysis_nf/master/assets/schema_input.json",
+    "title": "access_data_analysis_nf pipeline - params.input schema",
+    "description": "Schema for the Voyager-prepared samplesheet provided with params.input. One row per sample; all file paths are resolved by Voyager.",
     "type": "array",
     "items": {
         "type": "object",
         "properties": {
+            "combined_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Combined patient identifier used to group samples (e.g. C-ABC123_P-0012345)"
+            },
             "cmo_patient_id": {
                 "type": "string",
-                "pattern": "^$|^C-[A-Z0-9]+$",
+                "pattern": "^$|^C-[A-Za-z0-9]+$",
                 "errorMessage": "cmo_patient_id must be empty or follow the format 'C-XXXXXX'"
             },
             "dmp_patient_id": {
                 "type": "string",
-                "pattern": "^$|^P-[A-Z0-9]+$",
+                "pattern": "^$|^P-[A-Za-z0-9]+$",
                 "errorMessage": "dmp_patient_id must be empty or follow the format 'P-XXXXXX'"
             },
             "sex": {
                 "type": "string",
                 "pattern": "^[MF]$",
-                "errorMessage": "sex must be M or F"
+                "errorMessage": "sex must be 'M' or 'F'"
+            },
+            "sample_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Sample identifier"
+            },
+            "assay_type": {
+                "type": "string",
+                "enum": ["research_access", "clinical_access", "clinical_impact"],
+                "errorMessage": "assay_type must be one of research_access, clinical_access, clinical_impact"
+            },
+            "tumor_normal": {
+                "type": "string",
+                "enum": ["tumor", "normal"],
+                "errorMessage": "tumor_normal must be 'tumor' or 'normal'"
+            },
+            "anon_id": {
+                "type": "string",
+                "description": "Anonymized ID for clinical samples ('NA' or empty for research samples)"
+            },
+            "access_version": {
+                "type": "string",
+                "pattern": "^$|^XS[12]$",
+                "errorMessage": "access_version must be empty, 'XS1', or 'XS2'",
+                "description": "ACCESS assay version for research samples; selects the v1/v2 gene list in copy-number filtering"
+            },
+            "duplex_bam": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the duplex BAM (research/clinical ACCESS tumor samples)"
+            },
+            "simplex_bam": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the simplex BAM (research/clinical ACCESS tumor samples)"
+            },
+            "unfilter_bam": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the unfiltered ACCESS BAM (research/clinical ACCESS normal samples)"
+            },
+            "standard_bam": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the standard BAM. Required for every sample: used by biometrics and by genotyping for clinical IMPACT."
+            },
+            "maf": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the research mutations MAF (research ACCESS tumor samples only)"
+            },
+            "cna_file": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the research copy-number segments file (research ACCESS tumor samples only)"
+            },
+            "sv_file": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the research structural-variant file (research ACCESS tumor samples only)"
+            },
+            "msi_file": {
+                "type": "string",
+                "format": "file-path",
+                "description": "Path to the research MSI results file (research ACCESS tumor samples only)"
             }
-        }
+        },
+        "required": ["combined_id", "sex", "sample_id", "assay_type", "tumor_normal"]
     }
 }

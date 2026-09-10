@@ -2,9 +2,9 @@ import csv
 import pandas as pd
 import os
 import argparse
-import json
 from collections import defaultdict
-import glob
+
+from patient_sheet import load_patient_data
 
 # Define the columns to be included in the MAF files
 MAF_COLUMNS = [
@@ -24,16 +24,16 @@ VARIANT_KEY_COLS = [
     'Reference_Allele', 'Tumor_Seq_Allele2'
 ]
 
-def get_all_calls(patient_json, research_access_mutations_maf_template, dmp_mutations_file):
+def get_all_calls(patient_sheet, dmp_mutations_file):
     """
     Load patient data, get all mutation calls (research and clinical), merge and filter them,
     track their sources, then write results to a single MAF file.
     """
-    # Load in the patient JSON
-    patient_data = load_patient_data(patient_json)
+    # Load the per-patient samplesheet slice
+    patient_data = load_patient_data(patient_sheet)
     combined_id = patient_data.get('combined_id')
     # Get the research and clinical calls from corresponding MAF files
-    research_calls, research_sample_map, research_assay_types = get_research_access_mutations(patient_data, research_access_mutations_maf_template)
+    research_calls, research_sample_map, research_assay_types = get_research_access_mutations(patient_data)
     clinical_calls, clinical_sample_map, clinical_assay_types = get_clinical_mutations(patient_data, dmp_mutations_file)
     # Merge and filter the calls based on the exclude gene and classification lists
     all_small_calls, mutation_to_samples, sample_assay_types = merge_calls_with_tracking(
@@ -120,9 +120,9 @@ def parse_mutation_file(mutations_file, assay_type, dmp_id=None):
 
     return mutations, sample_tracking, sample_assay_types
 
-def get_research_access_mutations(patient_data, research_access_mutations_maf_template):
+def get_research_access_mutations(patient_data):
     """
-    Find every research sample in the patient_data, and parse the maf file for each sample.
+    Find every research sample in the patient_data, and parse its samplesheet MAF.
     """
     cmo_id = patient_data.get('cmo_id')
     research_mutations = []
@@ -135,14 +135,10 @@ def get_research_access_mutations(patient_data, research_access_mutations_maf_te
     # Find each research sample in the patient_data
     for sample_id, sample_data in patient_data.get("samples", {}).items():
         if sample_data.get('assay_type') == "research_access" and sample_data.get('tumor_normal') == "tumor":
-            access_version = sample_data.get('access_version')
-            donor_id = sample_data.get('donor_id')
-            maf_path = (
-                research_access_mutations_maf_template
-                .replace("{cmo_patient_id}", cmo_id)
-                .replace("{sample_id}", sample_id)
-                .replace("{donor_id}", donor_id)
-            )
+            maf_path = sample_data.get('maf', '')
+            if not maf_path:
+                print(f"[WARNING] No research MAF in samplesheet for {sample_id}")
+                continue
             # Add the variants from the maf file
             mutations, sample_tracking, sample_assay_types = parse_mutation_file(maf_path, "research")
             research_mutations.extend(mutations)
@@ -237,26 +233,15 @@ def create_maf(calls_df, mutation_to_samples, sample_assay_types, patient_id):
 
     return calls_df
 
-def load_patient_data(patient_json):
-    try:
-        with open(patient_json) as json_file:
-            return json.load(json_file)
-    except Exception as e:
-        print(f"Error loading patient data from {patient_json}: {e}")
-        return {}
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate all called mutations MAF with sample tracking.")
-    parser.add_argument("--patient_json", required=True, help="Path to patient JSON file")
-    parser.add_argument("--research_access_mutations_maf_template", required=True,
-                        help="Template path to research MAF files")
+    parser.add_argument("--patient_sheet", required=True, help="Per-patient samplesheet CSV")
     parser.add_argument("--dmp_mutations_file", required=True, help="Path to clinical mutations file")
     parser.add_argument("--output", required=True, help="Output file")
     args = parser.parse_args()
 
     df = get_all_calls(
-        args.patient_json,
-        args.research_access_mutations_maf_template,
+        args.patient_sheet,
         args.dmp_mutations_file
     )
     output_file = args.output

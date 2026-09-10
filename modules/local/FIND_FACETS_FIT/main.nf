@@ -8,7 +8,7 @@ process FIND_FACETS_FIT {
 
     input:
     val facets_dir
-    tuple path(patient_json), val(patient_id)
+    tuple path(patient_sheet), val(patient_id)
 
     publishDir "${params.outdir}/intermediate/${patient_id}", mode: 'copy', pattern: '*facets_fit.txt'
 
@@ -23,7 +23,7 @@ process FIND_FACETS_FIT {
     """
     python3 ${workflow.projectDir}/bin/facets_fit.py \\
         --facets_dir $facets_dir \\
-        --patient_json $patient_json \\
+        --patient_sheet $patient_sheet
     """
 
 

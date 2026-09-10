@@ -1,7 +1,4 @@
-cmo_patient_id,dmp_patient_id,sex
-C-2V9K1H,P-0006628,M
-C-X24RL0,P-0040945,F
-C-ETV89H,P-0018071,F
-C-6P876R,P-0040133,M
-C-V4PN7L,P-0069982,F
-C-1V5P0L,P-0034168,M
+combined_id,cmo_patient_id,dmp_patient_id,sex,sample_id,assay_type,tumor_normal,anon_id,duplex_bam,simplex_bam,unfilter_bam,standard_bam,maf,cna_file,sv_file,msi_file
+C-TEST01_P-0000001,C-TEST01,P-0000001,M,C-TEST01-L001-d,research_access,tumor,NA,/data/bams/C-TEST01-L001-d-duplex.bam,/data/bams/C-TEST01-L001-d-simplex.bam,,/data/bams/C-TEST01-L001-d-standard.bam,/data/mafs/C-TEST01-L001-d.combined-variants.maf,/data/cna/C-TEST01-L001-d.genes.txt,/data/sv/C-TEST01-L001-d_AllAnnotatedSVs.txt,/data/msi/C-TEST01-L001-d_msi_results.txt
+C-TEST01_P-0000001,C-TEST01,P-0000001,M,C-TEST01-N001-d,research_access,normal,NA,,,/data/bams/C-TEST01-N001-d-unfilter.bam,/data/bams/C-TEST01-N001-d-standard.bam,,,,
+C-TEST01_P-0000001,C-TEST01,P-0000001,M,P-0000001-T01-IM6,clinical_impact,tumor,abc123def456,,,,/data/bams/abc123def456.bam,,,,

@@ -1,3 +1,7 @@
-sample,fastq_1,fastq_2
-SAMPLE_PAIRED_END,/path/to/fastq/files/AEG588A1_S1_L002_R1_001.fastq.gz,/path/to/fastq/files/AEG588A1_S1_L002_R2_001.fastq.gz
-SAMPLE_SINGLE_END,/path/to/fastq/files/AEG588A4_S4_L003_R1_001.fastq.gz,
+combined_id,cmo_patient_id,dmp_patient_id,sex,sample_id,assay_type,tumor_normal,anon_id,duplex_bam,simplex_bam,unfilter_bam,standard_bam,maf,cna_file,sv_file,msi_file
+C-ABC123_P-0012345,C-ABC123,P-0012345,F,C-ABC123-L001-d,research_access,tumor,NA,/path/to/bams/C-ABC123-L001-d-duplex.bam,/path/to/bams/C-ABC123-L001-d-simplex.bam,,/path/to/bams/C-ABC123-L001-d-standard.bam,/path/to/mafs/C-ABC123-L001-d.combined-variants.maf,/path/to/cna/C-ABC123-L001-d_copynumber_segclusp.genes.txt,/path/to/sv/C-ABC123-L001-d_AllAnnotatedSVs.txt,/path/to/msi/C-ABC123-L001-d_msi_results.txt
+C-ABC123_P-0012345,C-ABC123,P-0012345,F,C-ABC123-N001-d,research_access,normal,NA,,,/path/to/bams/C-ABC123-N001-d-unfilter.bam,/path/to/bams/C-ABC123-N001-d-standard.bam,,,,
+C-ABC123_P-0012345,C-ABC123,P-0012345,F,P-0012345-T01-ACCESS,clinical_access,tumor,9f8e7d6c5b4a3210,/path/to/bams/9f8e7d6c5b4a3210-duplex.bam,/path/to/bams/9f8e7d6c5b4a3210-simplex.bam,,/path/to/bams/9f8e7d6c5b4a3210-standard.bam,,,,
+C-ABC123_P-0012345,C-ABC123,P-0012345,F,P-0012345-T01-IM6,clinical_impact,tumor,1a2b3c4d5e6f7890,,,,/path/to/bams/1a2b3c4d5e6f7890.bam,,,,
+C-XYZ789_P-0098765,C-XYZ789,P-0098765,M,C-XYZ789-L001-d,research_access,tumor,NA,/path/to/bams/C-XYZ789-L001-d-duplex.bam,/path/to/bams/C-XYZ789-L001-d-simplex.bam,,/path/to/bams/C-XYZ789-L001-d-standard.bam,/path/to/mafs/C-XYZ789-L001-d.combined-variants.maf,/path/to/cna/C-XYZ789-L001-d_copynumber_segclusp.genes.txt,/path/to/sv/C-XYZ789-L001-d_AllAnnotatedSVs.txt,/path/to/msi/C-XYZ789-L001-d_msi_results.txt
+C-XYZ789_P-0098765,C-XYZ789,P-0098765,M,C-XYZ789-N001-d,research_access,normal,NA,,,/path/to/bams/C-XYZ789-N001-d-unfilter.bam,/path/to/bams/C-XYZ789-N001-d-standard.bam,,,,

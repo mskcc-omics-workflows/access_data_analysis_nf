@@ -2,8 +2,9 @@ import csv
 import pandas as pd
 import os
 import argparse
-import json
 import re
+
+from patient_sheet import load_patient_data
 
 ##############################
 # Helper functions
@@ -32,32 +33,21 @@ def is_valid_path(path):
         return False
     return True
 
-def load_patient_data(patient_json):
-    with open(patient_json) as json_file:
-        patient_data = json.load(json_file)
-        cmo_id = patient_data['cmo_id']
-        dmp_id = patient_data['dmp_id']
-        combined_id = patient_data['combined_id']
-    return patient_data, cmo_id, dmp_id, combined_id
-
-def infer_research_access_sv_path(research_access_sv_template, cmo_id, sample_id):
-    research_access_sv_path = research_access_sv_template.replace("{cmo_patient_id}", cmo_id).replace("{sample_id}", sample_id)
-    if is_valid_path(research_access_sv_path):
-        return research_access_sv_path
-    else:
-        return False
+def load_patient_meta(patient_sheet):
+    patient_data = load_patient_data(patient_sheet)
+    return patient_data, patient_data['cmo_id'], patient_data['dmp_id'], patient_data['combined_id']
 
 ##############################
 # Data extraction functions
 ##############################
 
-def get_research_access_sv_calls(research_access_sv_template, patient_data, cmo_id, access_structural_variant_gene_list):
+def get_research_access_sv_calls(patient_data, access_structural_variant_gene_list):
     research_access_sv_calls = []
     for sample_id, sample_data in patient_data["samples"].items():
         if sample_data.get('assay_type') == "research_access" and sample_data.get('tumor_normal') == "tumor":
             source, assay = parse_assay_info(sample_data)
-            research_access_sv_path = infer_research_access_sv_path(research_access_sv_template, cmo_id, sample_id)
-            if research_access_sv_path:
+            research_access_sv_path = sample_data.get('sv_file', '')
+            if research_access_sv_path and is_valid_path(research_access_sv_path):
                 with open(research_access_sv_path, 'r') as research_access_sv_file:
                     research_access_sv_data = csv.DictReader(research_access_sv_file, delimiter='\t')
                     for row in research_access_sv_data:
@@ -133,13 +123,13 @@ def get_clinical_sv_calls(clinical_sv_file, patient_data, access_structural_vari
 # Main processing function
 ##############################
 
-def generate_sv_table(patient_json, research_access_sv_template, clinical_sv_file, access_structural_variant_gene_list):
-    patient_data, cmo_id, dmp_id, combined_id = load_patient_data(patient_json)
+def generate_sv_table(patient_sheet, clinical_sv_file, access_structural_variant_gene_list):
+    patient_data, cmo_id, dmp_id, combined_id = load_patient_meta(patient_sheet)
     sv_columns = ["sample_id", "patient_id", "cmo_patient_id", "dmp_patient_id", "sv_type", "gene1", "gene2", "chr1", "pos1", "chr2", "pos2",
                   "split_read_count", "paired_read_count", "total_read_count", "info", "source", "assay"]
 
     # Collect calls
-    research_access_sv_calls = get_research_access_sv_calls(research_access_sv_template, patient_data, cmo_id, access_structural_variant_gene_list)
+    research_access_sv_calls = get_research_access_sv_calls(patient_data, access_structural_variant_gene_list)
     clinical_sv_calls = get_clinical_sv_calls(clinical_sv_file, patient_data, access_structural_variant_gene_list)
 
     research_access_sv_calls_df = pd.DataFrame(research_access_sv_calls, columns=sv_columns)
@@ -233,8 +223,7 @@ def generate_sv_table(patient_json, research_access_sv_template, clinical_sv_fil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate SV table for a patient.")
-    parser.add_argument("--patient_json", required=True, help="Path to patient JSON file.")
-    parser.add_argument("--research_access_sv_template", required=True)
+    parser.add_argument("--patient_sheet", required=True, help="Per-patient samplesheet CSV")
     parser.add_argument("--clinical_sv_file", required=True)
     parser.add_argument("--access_structural_variant_gene_list", required=True)
     parser.add_argument("--output", required=True, help="Output CSV file.")
@@ -246,7 +235,7 @@ if __name__ == "__main__":
     else:
         access_structural_variant_gene_list = args.access_structural_variant_gene_list.split(",")
 
-    df = generate_sv_table(args.patient_json, args.research_access_sv_template, args.clinical_sv_file,
+    df = generate_sv_table(args.patient_sheet, args.clinical_sv_file,
                            access_structural_variant_gene_list)
     output_file = args.output
     df.to_csv(output_file, index=False)
