@@ -84,12 +84,20 @@ workflow PIPELINE_COMPLETION {
 
     main:
     summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
-    
+
     //
     // Completion summary
     //
     workflow.onComplete {
         completionSummary(monochrome_logs)
+
+        // Ridgeback discovers a Nextflow run's outputs by reading
+        // <outdir>/pipeline_output.csv (one file path per line) when no
+        // manifest.json is present -- see NextflowJobSubmitter.get_outputs()
+        // and the "outputs" port declared in nextflow_schema.json.
+        if (workflow.success) {
+            writePipelineOutputManifest(outdir)
+        }
     }
 
     workflow.onError {
@@ -102,6 +110,26 @@ workflow PIPELINE_COMPLETION {
     FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+//
+// Write <outdir>/pipeline_output.csv: the absolute path of every published
+// output file, one per line. This is the manifest Ridgeback's
+// NextflowJobSubmitter.get_outputs() reads (it checks for a Nextflow-native
+// manifest.json first, which this pipeline doesn't produce, then falls back
+// to this file) to register the run's outputs against the "outputs" port
+// declared in nextflow_schema.json.
+//
+def writePipelineOutputManifest(outdir) {
+    def outdir_path = file(outdir)
+    def manifest = outdir_path.resolve('pipeline_output.csv')
+    def paths = []
+    outdir_path.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+        if (f != manifest) {
+            paths << f.toAbsolutePath().toString()
+        }
+    }
+    manifest.text = paths ? paths.join('\n') + '\n' : ''
+}
 
 //
 // Generate methods description for MultiQC
