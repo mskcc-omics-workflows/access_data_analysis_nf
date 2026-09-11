@@ -95,9 +95,7 @@ workflow PIPELINE_COMPLETION {
         // <outdir>/pipeline_output.csv (one file path per line) when no
         // manifest.json is present -- see NextflowJobSubmitter.get_outputs()
         // and the "outputs" port declared in nextflow_schema.json.
-        if (workflow.success) {
-            writePipelineOutputManifest(outdir)
-        }
+        writePipelineOutputManifest(outdir)
     }
 
     workflow.onError {
@@ -119,7 +117,20 @@ workflow PIPELINE_COMPLETION {
 // to this file) to register the run's outputs against the "outputs" port
 // declared in nextflow_schema.json.
 //
+// NOTE: the `workflow.success` check has to live in here, not inline inside
+// the `workflow.onComplete { }` closure that calls this -- referencing
+// `workflow` directly inside that closure literal NPEs ("Cannot get
+// property 'success' on null object") when the closure is registered from
+// an included subworkflow file, because the closure's binding doesn't carry
+// the implicit `workflow` metadata object the way a plain `def` function's
+// does. Reproduced standalone; completionSummary() above works for the same
+// reason -- it makes the same workflow.success check from inside its own
+// `def`, not inline in the closure.
+//
 def writePipelineOutputManifest(outdir) {
+    if (!workflow.success) {
+        return
+    }
     def outdir_path = file(outdir)
     def manifest = outdir_path.resolve('pipeline_output.csv')
     def paths = []
