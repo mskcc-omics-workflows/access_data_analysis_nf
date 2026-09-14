@@ -92,9 +92,10 @@ workflow PIPELINE_COMPLETION {
         completionSummary(monochrome_logs)
 
         // Ridgeback discovers a Nextflow run's outputs by reading
-        // <outdir>/pipeline_output.csv (one file path per line) when no
-        // manifest.json is present -- see NextflowJobSubmitter.get_outputs()
-        // and the "outputs" port declared in nextflow_schema.json.
+        // <outdir>/manifest.json -- see NextflowJobSubmitter.get_outputs(),
+        // which checks for this file before falling back to a plain-text
+        // outputs list. Populates the "outputs" port declared in
+        // nextflow_schema.json.
         writePipelineOutputManifest(outdir)
     }
 
@@ -110,12 +111,11 @@ workflow PIPELINE_COMPLETION {
 */
 
 //
-// Write <outdir>/pipeline_output.csv: the absolute path of every published
-// output file, one per line. This is the manifest Ridgeback's
-// NextflowJobSubmitter.get_outputs() reads (it checks for a Nextflow-native
-// manifest.json first, which this pipeline doesn't produce, then falls back
-// to this file) to register the run's outputs against the "outputs" port
-// declared in nextflow_schema.json.
+// Write <outdir>/manifest.json: the CWL-style manifest Ridgeback's
+// NextflowJobSubmitter.get_outputs() reads first, before falling back to a
+// plain-text outputs list, to register the run's outputs against the
+// "outputs" port declared in nextflow_schema.json. Shape must match what
+// Ridgeback expects: {"published": [{"target": "<absolute path>"}, ...]}.
 //
 // NOTE: the `workflow.success` check has to live in here, not inline inside
 // the `workflow.onComplete { }` closure that calls this -- referencing
@@ -132,14 +132,14 @@ def writePipelineOutputManifest(outdir) {
         return
     }
     def outdir_path = file(outdir)
-    def manifest = outdir_path.resolve('pipeline_output.csv')
+    def manifest = outdir_path.resolve('manifest.json')
     def paths = []
     outdir_path.eachFileRecurse(groovy.io.FileType.FILES) { f ->
         if (f != manifest) {
             paths << f.toAbsolutePath().toString()
         }
     }
-    manifest.text = paths ? paths.join('\n') + '\n' : ''
+    manifest.text = groovy.json.JsonOutput.toJson([published: paths.collect { [target: it] }])
 }
 
 //
