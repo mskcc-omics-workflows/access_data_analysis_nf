@@ -19,6 +19,7 @@ include { ACCESSANALYSIS  } from './workflows/accessanalysis'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { PIPELINE_COMPLETION } from './subworkflows/local/utils_nfcore_accessanalysis_pipeline'
 include { SPLIT_SAMPLESHEET } from './modules/local/SPLIT_SAMPLESHEET/main'
+include { MANIFEST } from './modules/local/MANIFEST/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,6 +78,22 @@ workflow {
 
     patient_sheets = SPLIT_SAMPLESHEET.out.patient_samplesheets.flatten()
     patient_sheets | MSK_ACCESS_DATA_ANALYSIS_NF
+
+    //
+    // MODULE: Optionally generate an IGO manifest via Databricks. Cohort-level
+    // (keyed by request_id, not by patient), so it runs once for the whole
+    // pipeline rather than per-patient like the ACCESSANALYSIS steps above.
+    //
+    if (params.request_id) {
+        if (!params.manifest_secrets_file) {
+            error "params.request_id is set but params.manifest_secrets_file is not -- MANIFEST needs it for Databricks/JFrog credentials."
+        }
+        MANIFEST (
+            params.request_id,
+            params.manifest_secrets_file
+        )
+    }
+
     //
     // SUBWORKFLOW: Run completion tasks
     //

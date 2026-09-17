@@ -35,6 +35,27 @@
                 }
             }
         },
+        "manifest_options": {
+            "title": "Manifest options",
+            "type": "object",
+            "fa_icon": "fas fa-id-card",
+            "description": "Optional last pipeline step: generate a manifest-cli TSV for an IGO Request ID.",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "description": "IGO Request ID to generate a manifest for. Leave unset to skip the MANIFEST step.",
+                    "fa_icon": "fas fa-hashtag"
+                },
+                "manifest_secrets_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Path to a KEY=VALUE env file with DATABRICKS_HOST, DATABRICKS_HTTP_PATH, DATABRICKS_TOKEN, MANIFEST_OUTPUT_DIR, MANIFEST_CONFIG_DIR, JFROG_USER and JFROG_TOKEN. Required if request_id is set.",
+                    "help_text": "See manifest_secrets.env.example at the repo root.",
+                    "fa_icon": "fas fa-key"
+                }
+            }
+        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -80,6 +101,9 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/manifest_options"
         },
         {
             "$ref": "#/$defs/generic_options"
