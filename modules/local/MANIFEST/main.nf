@@ -1,20 +1,23 @@
-// manifest-cli's image lives in a private JFrog registry, so pulling it needs
-// auth. Every profile in this repo runs under Singularity (voyager/juno/iris,
-// and even the "docker" profile flips singularity.enabled = true), and
-// Nextflow pulls Singularity images itself in its own head process -- before
-// any task or work dir exists -- reading SINGULARITY_DOCKER_USERNAME /
-// SINGULARITY_DOCKER_PASSWORD from the environment `nextflow run` was
-// launched in. That's outside anything a process directive (beforeScript,
-// path inputs) can reach, so there's nothing to wire in here: whoever
-// launches the pipeline must `source` the secrets file (or otherwise export
-// those two vars) before invoking `nextflow run`.
+// manifest-cli's image lives in a private JFrog registry that Nextflow can't
+// authenticate to on its own (pulling a Singularity image happens in
+// Nextflow's own head process, before any task exists, so there's no process
+// directive that can supply registry credentials for it -- see the MANIFEST
+// module's git history if that's ever revisited). So the image is pre-seeded
+// into Nextflow's own Singularity cache dir instead of pulled live -- the
+// container reference below is normal, but the pull step is manual:
+//   singularity pull \
+//     /data1/core005/voyager_staging/ridgeback/voyager_pipeline_cache/mskcc.jfrog.io-omicswf-docker-prod-local-manifest_cli-0.1.0.img \
+//     docker://mskcc.jfrog.io/omicswf-docker-prod-local/manifest_cli:0.1.0
+// That filename isn't arbitrary -- it's Nextflow's own cache-key derivation
+// (image ref with '/' and ':' replaced by '-', plus .img), so it has to match
+// exactly or Nextflow treats it as a miss and attempts a live pull again.
+// Re-run that (bumping the tag/filename) whenever manifest_cli is
+// rebuilt/retagged -- nothing here will pick up a new image automatically.
 process MANIFEST {
     tag "$request_id"
     label 'process_single'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'mskcc.jfrog.io/omicswf-docker-prod-local/manifest_cli:0.1.0':
-        'mskcc.jfrog.io/omicswf-docker-prod-local/manifest_cli:0.1.0' }"
+    container 'mskcc.jfrog.io/omicswf-docker-prod-local/manifest_cli:0.1.0'
 
     input:
     val request_id
