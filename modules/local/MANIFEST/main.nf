@@ -1,14 +1,13 @@
-// manifest-cli's image lives in a private JFrog registry, so the docker daemon
-// needs to be logged in before it can pull it. beforeScript runs on the host,
-// before the container is launched, so it's the one place that can do that login.
-// We skip it for singularity since there's no docker daemon to log in.
-def jfrog_login_cmd = {
-    if (workflow.containerEngine != 'docker') {
-        return ''
-    }
-    "set -a; source ${params.manifest_secrets_file}; set +a; echo \"\$JFROG_TOKEN\" | docker login mskcc.jfrog.io -u \"\$JFROG_USER\" --password-stdin"
-}
-
+// manifest-cli's image lives in a private JFrog registry, so pulling it needs
+// auth. Every profile in this repo runs under Singularity (voyager/juno/iris,
+// and even the "docker" profile flips singularity.enabled = true), and
+// Nextflow pulls Singularity images itself in its own head process -- before
+// any task or work dir exists -- reading SINGULARITY_DOCKER_USERNAME /
+// SINGULARITY_DOCKER_PASSWORD from the environment `nextflow run` was
+// launched in. That's outside anything a process directive (beforeScript,
+// path inputs) can reach, so there's nothing to wire in here: whoever
+// launches the pipeline must `source` the secrets file (or otherwise export
+// those two vars) before invoking `nextflow run`.
 process MANIFEST {
     tag "$request_id"
     label 'process_single'
@@ -16,8 +15,6 @@ process MANIFEST {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'mskcc.jfrog.io/omicswf-docker-prod-local/manifest_cli:0.1.0':
         'mskcc.jfrog.io/omicswf-docker-prod-local/manifest_cli:0.1.0' }"
-
-    beforeScript jfrog_login_cmd()
 
     input:
     val request_id

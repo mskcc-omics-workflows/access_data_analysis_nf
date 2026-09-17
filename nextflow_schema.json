@@ -50,8 +50,8 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "description": "Path to a KEY=VALUE env file with DATABRICKS_HOST, DATABRICKS_HTTP_PATH, DATABRICKS_TOKEN, MANIFEST_OUTPUT_DIR, MANIFEST_CONFIG_DIR, JFROG_USER and JFROG_TOKEN. Required if request_id is set.",
-                    "help_text": "See manifest_secrets.env.example at the repo root.",
+                    "description": "Path to a KEY=VALUE env file with DATABRICKS_HOST, DATABRICKS_HTTP_PATH, DATABRICKS_TOKEN, MANIFEST_OUTPUT_DIR, MANIFEST_CONFIG_DIR, SINGULARITY_DOCKER_USERNAME and SINGULARITY_DOCKER_PASSWORD. Required if request_id is set.",
+                    "help_text": "See manifest_secrets.env.example at the repo root. SINGULARITY_DOCKER_USERNAME/PASSWORD must also be exported into the shell that launches `nextflow run` -- the pipeline can't inject them into the Singularity image pull itself.",
                     "fa_icon": "fas fa-key"
                 }
             }
